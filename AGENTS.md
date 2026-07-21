@@ -4,16 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# Arcade Vault
+## Arcade Vault
 
 Next.js 16.2.10 + React 19.2.4 + Tailwind CSS v4 + TypeScript 5.
 
-## Commands
+## Skills
 
-- `npm run dev` — dev server
-- `npm run build` — production build
-- `npm run lint` — ESLint only (flat config, `eslint.config.mjs`)
-- No `typecheck`, `test`, or `format` scripts exist
+Usa siempre /frontend-design para diseñar interfaces de usuario.
 
 ## Architecture
 
@@ -25,5 +22,5 @@ Next.js 16.2.10 + React 19.2.4 + Tailwind CSS v4 + TypeScript 5.
 ## Spec-Driven Workflow
 
 - Write specs in `spec/`, implementations in `spec-impl/` (directories don't exist yet — create as needed)
-- Methodology: https://github.com/Klerith/fernando-skills
+- Methodology: `https://github.com/Klerith/fernando-skills`
 - Run `npx skills@latest add Klerith/fernando-skills` to install tooling

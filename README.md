@@ -14,3 +14,10 @@ Siguiendo las buenas practicas recomendadas aquí:
 ```bash
 npx skills@latest add Klerith/fernando-skills
 ```
+
+## Commands
+
+- `npm run dev` — dev server
+- `npm run build` — production build
+- `npm run lint` — ESLint only (flat config, `eslint.config.mjs`)
+- No `typecheck`, `test`, or `format` scripts exist
