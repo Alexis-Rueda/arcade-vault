@@ -15,8 +15,9 @@ export function Nav() {
   const close = () => setOpen(false);
 
   const isActive = (name: string) =>
-    pathname === `/${name}` ||
-    (name === "biblioteca" && (pathname.startsWith("/detalle/") || pathname.startsWith("/player/")));
+    (name === "home" && pathname === "/") ||
+    (name !== "home" && pathname === `/${name}`) ||
+    (name === "games" && (pathname.startsWith("/games/") || pathname.startsWith("/player/")));
 
   const authBtn = user ? (
     <button className="btn ghost auth-btn" onClick={() => setUser(null)}>{user.name} ▾</button>
@@ -27,13 +28,14 @@ export function Nav() {
   return (
     <>
       <nav className="av-nav">
-        <Link href="/biblioteca" className="logo" onClick={close}>
+        <Link href="/" className="logo" onClick={close}>
           <div className="logo-mark" />
           <div className="logo-text neon-cyan">ARCADE <span className="neon-magenta">VAULT</span></div>
         </Link>
 
         <div className="links">
-          <Link href="/biblioteca" className={isActive("biblioteca") ? "active" : ""}>Biblioteca</Link>
+          <Link href="/" className={isActive("home") ? "active" : ""}>Inicio</Link>
+          <Link href="/games" className={isActive("games") ? "active" : ""}>Juegos</Link>
           <Link href="/salon" className={isActive("salon") ? "active" : ""}>Salón de la Fama</Link>
         </div>
 
@@ -54,7 +56,8 @@ export function Nav() {
       <div className={"av-mobile-backdrop" + (open ? " open" : "")} onClick={close} />
       <aside className={"av-mobile-panel" + (open ? " open" : "")}>
         <div className="pixel neon-cyan" style={{ fontSize: 11, marginBottom: 16 }}>MENÚ</div>
-        <Link href="/biblioteca" className={isActive("biblioteca") ? "active" : ""} onClick={close}>Biblioteca</Link>
+        <Link href="/" className={isActive("home") ? "active" : ""} onClick={close}>Inicio</Link>
+        <Link href="/games" className={isActive("games") ? "active" : ""} onClick={close}>Juegos</Link>
         <Link href="/salon" className={isActive("salon") ? "active" : ""} onClick={close}>Salón de la Fama</Link>
         {user ? (
           <a className={pathname === "/auth" ? "active" : ""} onClick={() => { setUser(null); close(); }}>Cerrar Sesión</a>

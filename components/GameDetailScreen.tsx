@@ -39,7 +39,7 @@ export function GameDetailScreen({ game }: { game: Game }) {
           </div>
           <div className="detail-actions">
             <button className="btn xl pulse" onClick={() => router.push(`/player/${game.id}`)}>▶  JUGAR AHORA</button>
-            <button className="btn ghost lg" onClick={() => router.push("/biblioteca")}>VOLVER AL VAULT</button>
+            <button className="btn ghost lg" onClick={() => router.push("/games")}>VOLVER AL VAULT</button>
           </div>
         </div>
       </div>

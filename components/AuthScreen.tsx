@@ -16,12 +16,12 @@ export function AuthScreen() {
     e.preventDefault();
     const name = (userName || "PLAYER1").toUpperCase().slice(0, 10);
     setUser({ name, loggedAt: Date.now() });
-    router.push("/biblioteca");
+    router.push("/games");
   };
 
   const guest = () => {
     setUser(null);
-    router.push("/biblioteca");
+    router.push("/games");
   };
 
   return (

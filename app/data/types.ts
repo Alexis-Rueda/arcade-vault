@@ -32,8 +32,9 @@ export type ScoreRow = {
 };
 
 export type Route =
-  | { name: "biblioteca" }
-  | { name: "detalle"; id: string }
+  | { name: "home" }
+  | { name: "games" }
+  | { name: "games-detail"; id: string }
   | { name: "player"; id: string }
   | { name: "auth" }
   | { name: "salon" };
