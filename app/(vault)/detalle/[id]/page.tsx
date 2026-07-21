@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getGameById } from "@/app/data/games";
-import { Nav } from "@/components/Nav";
 import { GameDetailScreen } from "@/components/GameDetailScreen";
 
 export default async function DetallePage(props: { params: Promise<{ id: string }> }) {
@@ -11,10 +10,5 @@ export default async function DetallePage(props: { params: Promise<{ id: string 
     notFound();
   }
 
-  return (
-    <>
-      <Nav />
-      <GameDetailScreen game={game} />
-    </>
-  );
+  return <GameDetailScreen game={game} />;
 }

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getGameById } from "@/app/data/games";
-import { Nav } from "@/components/Nav";
 import { PlayerScreen } from "@/components/PlayerScreen";
 
 export default async function PlayerPage(props: { params: Promise<{ id: string }> }) {
@@ -11,10 +10,5 @@ export default async function PlayerPage(props: { params: Promise<{ id: string }
     notFound();
   }
 
-  return (
-    <>
-      <Nav />
-      <PlayerScreen game={game} />
-    </>
-  );
+  return <PlayerScreen game={game} />;
 }
