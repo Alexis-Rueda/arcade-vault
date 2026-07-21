@@ -1,6 +1,6 @@
 # SPEC 02 — Home landing y refactor de rutas (/games)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-07-21
 > **Objective:** Portar la pantalla de home (landing) del template `resources/templates/home-about/home.jsx` a Next.js con `/` como entrada, mover los datos de la home a `app/data/home.ts`, y renombrar las rutas `biblioteca` y `detalle` a `games` y `games/[id]` para que los CTAs de la home apunten a URLs reales.
@@ -222,27 +222,27 @@ Cada paso deja el sistema funcional. Commits chicos.
 
 ## Acceptance criteria
 
-- [ ] `app/data/home.ts` existe y exporta `FEATURES` (4), `STATS` (3), `ACTIVITY_TICKER` (7) y `TOP_PLAYERS_TODAY` (5) como `ReadonlyArray<...>`, junto con sus tipos `HomeFeature`, `HomeStat`, `ActivityRow`, `TopPlayer`.
-- [ ] `app/data/types.ts` define `Route` con los miembros: `home`, `games`, `games-detail` (con `id: string`), `player` (con `id: string`), `auth`, `salon`. No contiene `"biblioteca"` ni `"detalle"`.
-- [ ] `grep -rn '"biblioteca"\|"/detalle\|/detalle/' app/ components/ lib/` devuelve 0 coincidencias.
-- [ ] `curl localhost:3000/` responde 200 y renderiza la `HomeScreen` (no redirige).
-- [ ] `curl localhost:3000/biblioteca` y `curl localhost:3000/detalle/caida` devuelven 404.
-- [ ] `curl localhost:3000/games` y `curl localhost:3000/games/caida` responden 200.
-- [ ] La `HomeScreen` renderiza las siete secciones en orden: hero, why/features, games preview, stats, activity (ticker + top), pricing/FAQ, final CTA.
-- [ ] La sección "games preview" muestra exactamente 6 cards obtenidas de `GAMES.slice(0, 6)`, cada una envuelta en un `<Link>` a `/games/${game.id}`.
-- [ ] El CTA "EXPLORAR JUEGOS" apunta a `/games`; "CREAR CUENTA" a `/auth`; "INSERTAR MONEDA" a `/games`.
-- [ ] El ticker de activity muestra 7 filas de `ACTIVITY_TICKER` y top muestra 5 jugadores de `TOP_PLAYERS_TODAY`.
-- [ ] `Nav` muestra links "INICIO", "JUEGOS", "SALÓN DE LA FAMA" en ese orden, desktop y mobile.
-- [ ] Link "INICIO" activo cuando `pathname === "/"`.
-- [ ] Link "JUEGOS" activo cuando `pathname` es `/games`, `/games/...` o `/player/...`.
-- [ ] Logo del `Nav` apunta a `/`.
-- [ ] Secciones con `.reveal` aparecen con animación al scrollear, sin parpadeo visible en primera pantalla.
-- [ ] Pantallas existentes (`/auth`, `/salon`, `/player/[id]`, `/games`, `/games/[id]`) sin regresiones visuales ni de flujo.
-- [ ] "VOLVER AL VAULT" desde `/games/[id]`, `/player/[id]` y modal de game-over llevan a `/games`.
-- [ ] Bloque CSS de home está en `app/globals.css`. No quedan selectores `.home-*`, `.feature-*`, `.mini-*`, `.home-stats`, `.home-final`, `.activity-grid`, `.ticker`, `.top-list`, `.pricing-grid`, `.price-card`, `.pricing-faq` ni keyframes `float`/`bounce`/`reveal` sin migrar.
-- [ ] `app/globals.css` no contiene selectores `.about-*`, `.contact-*`, `.contact-form`, `.terminal-success`, `.highlight*`.
-- [ ] Consola del navegador sin errores ni warnings en `/`, `/games`, `/games/caida`, `/player/caida`, `/auth`, `/salon`.
-- [ ] `tsc --noEmit` pasa sin errores.
+- [x] `app/data/home.ts` existe y exporta `FEATURES` (4), `STATS` (3), `ACTIVITY_TICKER` (7) y `TOP_PLAYERS_TODAY` (5) como `ReadonlyArray<...>`, junto con sus tipos `HomeFeature`, `HomeStat`, `ActivityRow`, `TopPlayer`.
+- [x] `app/data/types.ts` define `Route` con los miembros: `home`, `games`, `games-detail` (con `id: string`), `player` (con `id: string`), `auth`, `salon`. No contiene `"biblioteca"` ni `"detalle"`.
+- [x] `grep -rn '"biblioteca"\|"/detalle\|/detalle/' app/ components/ lib/` devuelve 0 coincidencias.
+- [x] `curl localhost:3000/` responde 200 y renderiza la `HomeScreen` (no redirige).
+- [x] `curl localhost:3000/biblioteca` y `curl localhost:3000/detalle/caida` devuelven 404.
+- [x] `curl localhost:3000/games` y `curl localhost:3000/games/caida` responden 200.
+- [x] La `HomeScreen` renderiza las siete secciones en orden: hero, why/features, games preview, stats, activity (ticker + top), pricing/FAQ, final CTA.
+- [x] La sección "games preview" muestra exactamente 6 cards obtenidas de `GAMES.slice(0, 6)`, cada una envuelta en un `<Link>` a `/games/${game.id}`.
+- [x] El CTA "EXPLORAR JUEGOS" apunta a `/games`; "CREAR CUENTA" a `/auth`; "INSERTAR MONEDA" a `/games`.
+- [x] El ticker de activity muestra 7 filas de `ACTIVITY_TICKER` y top muestra 5 jugadores de `TOP_PLAYERS_TODAY`.
+- [x] `Nav` muestra links "INICIO", "JUEGOS", "SALÓN DE LA FAMA" en ese orden, desktop y mobile.
+- [x] Link "INICIO" activo cuando `pathname === "/"`.
+- [x] Link "JUEGOS" activo cuando `pathname` es `/games`, `/games/...` o `/player/...`.
+- [x] Logo del `Nav` apunta a `/`.
+- [x] Secciones con `.reveal` aparecen con animación al scrollear, sin parpadeo visible en primera pantalla.
+- [x] Pantallas existentes (`/auth`, `/salon`, `/player/[id]`, `/games`, `/games/[id]`) sin regresiones visuales ni de flujo.
+- [x] "VOLVER AL VAULT" desde `/games/[id]`, `/player/[id]` y modal de game-over llevan a `/games`.
+- [x] Bloque CSS de home está en `app/globals.css`. No quedan selectores `.home-*`, `.feature-*`, `.mini-*`, `.home-stats`, `.home-final`, `.activity-grid`, `.ticker`, `.top-list`, `.pricing-grid`, `.price-card`, `.pricing-faq` ni keyframes `float`/`bounce`/`reveal` sin migrar.
+- [x] `app/globals.css` no contiene selectores `.about-*`, `.contact-*`, `.contact-form`, `.terminal-success`, `.highlight*`.
+- [x] Consola del navegador sin errores ni warnings en `/`, `/games`, `/games/caida`, `/player/caida`, `/auth`, `/salon`.
+- [x] `tsc --noEmit` pasa sin errores.
 
 ---
 
