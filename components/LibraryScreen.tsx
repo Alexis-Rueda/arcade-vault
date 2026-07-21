@@ -43,7 +43,7 @@ export function LibraryScreen({ games, cats }: { games: ReadonlyArray<Game>; cat
 
       <div className="av-grid">
         {filtered.map((g) => (
-          <GameCard key={g.id} game={g} onSelect={(game) => router.push(`/detalle/${game.id}`)} />
+          <GameCard key={g.id} game={g} onSelect={(game) => router.push(`/games/${game.id}`)} />
         ))}
         {filtered.length === 0 && (
           <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 80, color: "var(--ink-faint)" }}>
