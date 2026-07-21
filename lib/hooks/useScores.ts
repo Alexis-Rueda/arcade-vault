@@ -13,7 +13,8 @@ function getSnapshot() {
   return scoresCache;
 }
 
-const getServerSnapshot = (): ScoreEntry[] => [];
+const emptyArray: ScoreEntry[] = [];
+const getServerSnapshot = () => emptyArray;
 
 function subscribeWithCache(cb: () => void) {
   return subscribe(() => {

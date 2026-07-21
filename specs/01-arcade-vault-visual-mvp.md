@@ -1,6 +1,6 @@
 # SPEC 01 — MVP Visual Arcade Vault (5 pantallas)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** —
 > **Date:** 2026-07-21
 > **Objective:** Portar el template HTML+JSX de Arcade Vault a Next.js 16 con App Router, rutas reales, persistencia en `localStorage` y componentes tipados, sin implementar la lógica interna de los juegos.
@@ -43,27 +43,35 @@ Toda la data mock vive en `app/data/` para que mañana esa carpeta se reemplace 
 export type GameCategory = "ARCADE" | "PUZZLE" | "SHOOTER" | "VERSUS";
 
 export type Game = {
-  id: string;            // kebab-case, único
+  id: string; // kebab-case, único
   title: string;
   short: string;
   long: string;
   cat: GameCategory;
-  cover: string;         // clase CSS .cover-*
+  cover: string; // clase CSS .cover-*
   color: "cyan" | "magenta" | "yellow" | "green";
   best: number;
   plays: string;
 };
 
 export const CATS: ReadonlyArray<"TODOS" | GameCategory> = [
-  "TODOS", "ARCADE", "PUZZLE", "SHOOTER", "VERSUS",
+  "TODOS",
+  "ARCADE",
+  "PUZZLE",
+  "SHOOTER",
+  "VERSUS",
 ];
 
-export const GAMES: ReadonlyArray<Game> = [ /* 8 juegos del template */ ];
+export const GAMES: ReadonlyArray<Game> = [
+  /* 8 juegos del template */
+];
 ```
 
 ```ts
 // app/data/players.ts
-export const PLAYERS: ReadonlyArray<string> = [ /* 18 nicknames del template */ ];
+export const PLAYERS: ReadonlyArray<string> = [
+  /* 18 nicknames del template */
+];
 ```
 
 ```ts
@@ -72,7 +80,7 @@ export type ScoreRow = {
   rank: number;
   name: string;
   score: number;
-  date: string;          // "DD/MM/2026"
+  date: string; // "DD/MM/2026"
 };
 
 export function seededScores(seed: number, count?: number): ScoreRow[];
@@ -81,12 +89,12 @@ export function seededScores(seed: number, count?: number): ScoreRow[];
 ```ts
 // app/data/types.ts — tipos compartidos del dominio
 export type User = {
-  name: string;          // hasta 10 chars, mayúsculas
+  name: string; // hasta 10 chars, mayúsculas
   loggedAt: number;
 };
 
 export type ScoreEntry = {
-  game: string;          // Game.id
+  game: string; // Game.id
   name: string;
   score: number;
   at: number;
@@ -115,13 +123,13 @@ export function appendScore(entry: Omit<ScoreEntry, "at">): void;
 
 **Mapeo a la futura DB (documentado en spec, no en código):**
 
-| Mock actual (`app/data/`)   | Reemplazo futuro              |
-| --------------------------- | ----------------------------- |
-| `games.ts` → `GAMES`        | `getGames()`, `getGameById()` |
-| `players.ts` → `PLAYERS`    | `getRandomPlayers(n)`         |
-| `scores.ts` → `seededScores`| `getTopScores(gameId, n)`     |
-| `storage.ts` (`av_user`)    | sesión gestionada por el back |
-| `storage.ts` (`av_scores`)  | tabla `scores` persistida     |
+| Mock actual (`app/data/`)    | Reemplazo futuro              |
+| ---------------------------- | ----------------------------- |
+| `games.ts` → `GAMES`         | `getGames()`, `getGameById()` |
+| `players.ts` → `PLAYERS`     | `getRandomPlayers(n)`         |
+| `scores.ts` → `seededScores` | `getTopScores(gameId, n)`     |
+| `storage.ts` (`av_user`)     | sesión gestionada por el back |
+| `storage.ts` (`av_scores`)   | tabla `scores` persistida     |
 
 **Convenciones:**
 
@@ -217,7 +225,7 @@ export function appendScore(entry: Omit<ScoreEntry, "at">): void;
 - [ ] `PAUSA` detiene el contador y muestra el overlay "EN PAUSA"; `REANUDAR` lo retoma desde donde iba.
 - [ ] `FIN` abre el modal "FIN DEL JUEGO" con la puntuación final.
 - [ ] El modal permite escribir hasta 10 iniciales en mayúsculas y guarda la entrada en `av_scores` con `{ game, name, score, at }`.
-- [ ] Tras guardar, aparece el toast "▸ PUNTUACIÓN GUARDADA_" y el botón Guardar desaparece.
+- [ ] Tras guardar, aparece el toast "▸ PUNTUACIÓN GUARDADA\_" y el botón Guardar desaparece.
 - [ ] `JUGAR DE NUEVO` resetea el estado y vuelve a la arena.
 - [ ] `VOLVER AL VAULT` desde el modal navega a `/biblioteca`.
 - [ ] `SALIR` desde el HUD navega a `/detalle/[id]`.
@@ -318,20 +326,20 @@ export function appendScore(entry: Omit<ScoreEntry, "at">): void;
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| **Hydration mismatch** en `<Nav>` y `<LibraryScreen>` si se lee `localStorage` en el render inicial. | Los hooks de `lib/hooks/` usan `useSyncExternalStore` con `getServerSnapshot` neutro y se sincronizan tras el mount. `<Nav>` y `<UserButton>` van envueltos en `<ClientOnly>` con un esqueleto (`"INICIAR SESIÓN"` placeholder) hasta el mount. |
-| **Pérdida de la sesión** al limpiar `localStorage` del navegador. | Es el comportamiento esperado; no es un bug. Documentado en los criterios como "recargar conserva, limpiar localStorage no". No se considera riesgo del producto. |
-| **`seededScores` diverge** del template si alguien toca el PRNG durante la impl. | El test de paridad visual lo cubre: los números en `/detalle/bloque-buster` y `/salon` deben coincidir con la versión HTML. Cualquier divergencia se detecta en QA. |
-| **Cover arts no se ven** porque faltan las clases `.cover-*` en `globals.css`. | Verificado al inicio del spec: `globals.css` ya las tiene (`.cover-bricks`, `.cover-tetro`, `.cover-snake`, `.cover-glot`, `.cover-invaders`, `.cover-rocas`, `.cover-rana`, `.cover-duelo`). El impl no toca `globals.css`. |
-| **Tilt 3D de la card se siente pegajoso en trackpad** (eventos `mousemove` constantes). | Mantener el `transform` como inline style sin `will-change: transform` permanente; el `transition` solo se aplica al hover, no durante el `mousemove`. Si en QA se siente mal, fallback: quitar el tilt y dejar solo el `translateY(-6px)`. |
-| **El `useEffect` de `score` suma puntos incluso cuando el tab no está visible** y "quema" vidas/levels en background. | Aceptado para el MVP. Es comportamiento del template original; no es objetivo del spec arreglarlo. Documentado como "fuera de scope". |
-| **Next.js 16 rompe APIs de routing** (`usePathname`, `useRouter`, `redirect`). | El `AGENTS.md` del proyecto advierte: "This is NOT the Next.js you know". El impl debe leer `node_modules/next/dist/docs/` antes de usar cualquier API de routing. Si alguna API cambia, ajustar en el momento, no antes. |
-| **Bundle se infla** por meter 5 pantallas client-side. | Server Components donde se pueda: `page.tsx` de cada ruta hace `import { GAMES } from "@/app/data/games"` y solo el sub-árbol interactivo (`<LibraryScreen>`, `<GameDetailScreen>`, etc.) lleva `"use client"`. Las pages quedan como `<Nav>` + `<Screen />` + `<Footer>`, todo lo demás server. |
-| **Confusión `app/data/` vs futura DB** durante la impl. | El spec lo deja escrito: `app/data/` **es** la "DB" hoy. Cualquier función nueva que pida datos (ej. `getGameById`) se escribe en `app/data/games.ts` como función helper, no como fetch. Cuando llegue el spec de DB, esas funciones se reescriben in-place y los consumidores no se enteran. |
-| **`localStorage` no disponible** (modo incógnito estricto, Safari ITP). | Aceptado: si falla, `lib/storage.ts` devuelve `null`/vacío y la app sigue funcionando sin persistencia. No hay try/catch silencioso que oculte el problema. |
-| **Tipado de `usePathname()`** en el App Router con grupos `(vault)`. | El pathname será `/biblioteca`, `/detalle/<id>`, etc. — el prefijo del grupo `(vault)` no aparece en la URL, así que la comparación directa funciona sin prefijo extra. |
-| **Doble render del `<Nav>`** si se monta tanto en el layout como en cada page por copy-paste. | El layout `app/(vault)/layout.tsx` es la única fuente de `<Nav>` y `<Footer>`. Los `page.tsx` solo renderizan su pantalla. El impl incluye un grep final para detectar duplicaciones. |
+| Risk                                                                                                                  | Mitigation                                                                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Hydration mismatch** en `<Nav>` y `<LibraryScreen>` si se lee `localStorage` en el render inicial.                  | Los hooks de `lib/hooks/` usan `useSyncExternalStore` con `getServerSnapshot` neutro y se sincronizan tras el mount. `<Nav>` y `<UserButton>` van envueltos en `<ClientOnly>` con un esqueleto (`"INICIAR SESIÓN"` placeholder) hasta el mount.                                                  |
+| **Pérdida de la sesión** al limpiar `localStorage` del navegador.                                                     | Es el comportamiento esperado; no es un bug. Documentado en los criterios como "recargar conserva, limpiar localStorage no". No se considera riesgo del producto.                                                                                                                                |
+| **`seededScores` diverge** del template si alguien toca el PRNG durante la impl.                                      | El test de paridad visual lo cubre: los números en `/detalle/bloque-buster` y `/salon` deben coincidir con la versión HTML. Cualquier divergencia se detecta en QA.                                                                                                                              |
+| **Cover arts no se ven** porque faltan las clases `.cover-*` en `globals.css`.                                        | Verificado al inicio del spec: `globals.css` ya las tiene (`.cover-bricks`, `.cover-tetro`, `.cover-snake`, `.cover-glot`, `.cover-invaders`, `.cover-rocas`, `.cover-rana`, `.cover-duelo`). El impl no toca `globals.css`.                                                                     |
+| **Tilt 3D de la card se siente pegajoso en trackpad** (eventos `mousemove` constantes).                               | Mantener el `transform` como inline style sin `will-change: transform` permanente; el `transition` solo se aplica al hover, no durante el `mousemove`. Si en QA se siente mal, fallback: quitar el tilt y dejar solo el `translateY(-6px)`.                                                      |
+| **El `useEffect` de `score` suma puntos incluso cuando el tab no está visible** y "quema" vidas/levels en background. | Aceptado para el MVP. Es comportamiento del template original; no es objetivo del spec arreglarlo. Documentado como "fuera de scope".                                                                                                                                                            |
+| **Next.js 16 rompe APIs de routing** (`usePathname`, `useRouter`, `redirect`).                                        | El `AGENTS.md` del proyecto advierte: "This is NOT the Next.js you know". El impl debe leer `node_modules/next/dist/docs/` antes de usar cualquier API de routing. Si alguna API cambia, ajustar en el momento, no antes.                                                                        |
+| **Bundle se infla** por meter 5 pantallas client-side.                                                                | Server Components donde se pueda: `page.tsx` de cada ruta hace `import { GAMES } from "@/app/data/games"` y solo el sub-árbol interactivo (`<LibraryScreen>`, `<GameDetailScreen>`, etc.) lleva `"use client"`. Las pages quedan como `<Nav>` + `<Screen />` + `<Footer>`, todo lo demás server. |
+| **Confusión `app/data/` vs futura DB** durante la impl.                                                               | El spec lo deja escrito: `app/data/` **es** la "DB" hoy. Cualquier función nueva que pida datos (ej. `getGameById`) se escribe en `app/data/games.ts` como función helper, no como fetch. Cuando llegue el spec de DB, esas funciones se reescriben in-place y los consumidores no se enteran.   |
+| **`localStorage` no disponible** (modo incógnito estricto, Safari ITP).                                               | Aceptado: si falla, `lib/storage.ts` devuelve `null`/vacío y la app sigue funcionando sin persistencia. No hay try/catch silencioso que oculte el problema.                                                                                                                                      |
+| **Tipado de `usePathname()`** en el App Router con grupos `(vault)`.                                                  | El pathname será `/biblioteca`, `/detalle/<id>`, etc. — el prefijo del grupo `(vault)` no aparece en la URL, así que la comparación directa funciona sin prefijo extra.                                                                                                                          |
+| **Doble render del `<Nav>`** si se monta tanto en el layout como en cada page por copy-paste.                         | El layout `app/(vault)/layout.tsx` es la única fuente de `<Nav>` y `<Footer>`. Los `page.tsx` solo renderizan su pantalla. El impl incluye un grep final para detectar duplicaciones.                                                                                                            |
 
 ---
 
