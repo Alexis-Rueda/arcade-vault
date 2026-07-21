@@ -4,11 +4,26 @@ import { useSyncExternalStore, useCallback } from "react";
 import { readUser, writeUser, subscribe } from "@/lib/storage";
 import type { User } from "@/app/data/types";
 
-const getSnapshot = () => readUser();
+let userCache: User | null | undefined;
+
+function getSnapshot() {
+  if (userCache === undefined) {
+    userCache = readUser();
+  }
+  return userCache;
+}
+
 const getServerSnapshot = () => null;
 
+function subscribeWithCache(cb: () => void) {
+  return subscribe(() => {
+    userCache = readUser();
+    cb();
+  });
+}
+
 export function useUser() {
-  const user = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const user = useSyncExternalStore(subscribeWithCache, getSnapshot, getServerSnapshot);
 
   const setUser = useCallback((u: User | null) => {
     writeUser(u);
