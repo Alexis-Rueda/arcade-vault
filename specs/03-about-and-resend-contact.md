@@ -1,6 +1,6 @@
 # SPEC 03 — About page y envío de contacto con Resend
 
-> **Status:** Approved
+> **Status:** Implemented"
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-08-01
 > **Objective:** Implementar la página /about portando el template `resources/templates/home-about/about.jsx` y reemplazar el envío simulado del formulario de contacto por un POST real a `/api/contact` que envía el mensaje vía Resend, manteniendo la animación de terminal del template cuando el envío es exitoso.
