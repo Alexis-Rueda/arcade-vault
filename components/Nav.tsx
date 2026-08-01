@@ -17,7 +17,8 @@ export function Nav() {
   const isActive = (name: string) =>
     (name === "home" && pathname === "/") ||
     (name !== "home" && pathname === `/${name}`) ||
-    (name === "games" && (pathname.startsWith("/games/") || pathname.startsWith("/player/")));
+    (name === "games" && (pathname.startsWith("/games/") || pathname.startsWith("/player/"))) ||
+    (name === "about" && pathname === "/about");
 
   const authBtn = user ? (
     <button className="btn ghost auth-btn" onClick={() => setUser(null)}>{user.name} ▾</button>
@@ -37,6 +38,7 @@ export function Nav() {
           <Link href="/" className={isActive("home") ? "active" : ""}>Inicio</Link>
           <Link href="/games" className={isActive("games") ? "active" : ""}>Juegos</Link>
           <Link href="/salon" className={isActive("salon") ? "active" : ""}>Salón de la Fama</Link>
+          <Link href="/about" className={isActive("about") ? "active" : ""}>Acerca de</Link>
         </div>
 
         <div className="spacer" />
@@ -59,6 +61,7 @@ export function Nav() {
         <Link href="/" className={isActive("home") ? "active" : ""} onClick={close}>Inicio</Link>
         <Link href="/games" className={isActive("games") ? "active" : ""} onClick={close}>Juegos</Link>
         <Link href="/salon" className={isActive("salon") ? "active" : ""} onClick={close}>Salón de la Fama</Link>
+        <Link href="/about" className={isActive("about") ? "active" : ""} onClick={close}>Acerca de</Link>
         {user ? (
           <a className={pathname === "/auth" ? "active" : ""} onClick={() => { setUser(null); close(); }}>Cerrar Sesión</a>
         ) : (
