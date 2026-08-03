@@ -1,8 +1,9 @@
-import type { User, ScoreEntry } from "@/app/data/types";
+// TODO(SPEC-04): migrar a Supabase — ver spec de integración
+import type { User, ScoreEntry } from '@/app/data/types';
 
 const KEYS = {
-  user: "av_user",
-  scores: "av_scores",
+  user: 'av_user',
+  scores: 'av_scores',
 } as const;
 
 const listeners = new Set<() => void>();
@@ -18,7 +19,7 @@ function notify(): void {
 
 export function readUser(): User | null {
   try {
-    return JSON.parse(localStorage.getItem(KEYS.user) || "null");
+    return JSON.parse(localStorage.getItem(KEYS.user) || 'null');
   } catch {
     return null;
   }
@@ -35,15 +36,17 @@ export function writeUser(u: User | null): void {
 
 export function readScores(): ScoreEntry[] {
   try {
-    return JSON.parse(localStorage.getItem(KEYS.scores) || "[]");
+    return JSON.parse(localStorage.getItem(KEYS.scores) || '[]');
   } catch {
     return [];
   }
 }
 
-export function appendScore(entry: Omit<ScoreEntry, "at">): void {
+export function appendScore(entry: Omit<ScoreEntry, 'at'>): void {
   try {
-    const all: ScoreEntry[] = JSON.parse(localStorage.getItem(KEYS.scores) || "[]");
+    const all: ScoreEntry[] = JSON.parse(
+      localStorage.getItem(KEYS.scores) || '[]',
+    );
     all.push({ ...entry, at: Date.now() });
     localStorage.setItem(KEYS.scores, JSON.stringify(all));
     notify();

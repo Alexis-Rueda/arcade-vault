@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useSyncExternalStore, useCallback } from "react";
-import { readUser, writeUser, subscribe } from "@/lib/storage";
-import type { User } from "@/app/data/types";
+// TODO(SPEC-04): migrar a Supabase — ver spec de integración
+import { useSyncExternalStore, useCallback } from 'react';
+import { readUser, writeUser, subscribe } from '@/lib/storage';
+import type { User } from '@/app/data/types';
 
 let userCache: User | null | undefined;
 
@@ -23,7 +24,11 @@ function subscribeWithCache(cb: () => void) {
 }
 
 export function useUser() {
-  const user = useSyncExternalStore(subscribeWithCache, getSnapshot, getServerSnapshot);
+  const user = useSyncExternalStore(
+    subscribeWithCache,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const setUser = useCallback((u: User | null) => {
     writeUser(u);

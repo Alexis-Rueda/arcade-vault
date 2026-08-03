@@ -1,6 +1,6 @@
 # SPEC 04 — Integración con Supabase
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02, SPEC 03
 > **Date:** 2026-08-03
 > **Objective:** Integrar Supabase como base de backend para la app de Next.js, creando clientes server/client, middleware, tipos TypeScript y configuración de entorno, sin migrar funcionalidad existente de localStorage.
@@ -64,7 +64,9 @@ export function createClient(): ReturnType<typeof createBrowserClient>;
 
 // lib/supabase/client-server.ts
 import { createServerClient } from '@supabase/ssr';
-export function createClient(): ReturnType<typeof createServerClient>;
+export async function createClient(): Promise<
+  ReturnType<typeof createServerClient>
+>;
 
 // lib/supabase/middleware.ts
 import { createServerClient } from '@supabase/ssr';
@@ -97,11 +99,11 @@ Cada paso deja el sistema funcional. Commits chicos.
 
 3. **Crear `lib/supabase/client-browser.ts`.** Exporta `createClient()` que usa `createBrowserClient` de `@supabase/ssr` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. _Verificable:_ `tsc --noEmit` pasa; importar desde un Client Component no falla en runtime.
 
-4. **Crear `lib/supabase/client-server.ts`.** Exporta `createClient(cookies)` que usa `createServerClient` de `@supabase/ssr`, inyectando `request` y `response` cookies de Next.js. _Verificable:_ `tsc --noEmit` pasa.
+4. **Crear `lib/supabase/client-server.ts`.** Exporta `createClient()` **async** que usa `createServerClient` de `@supabase/ssr`, leyendo cookies con `cookies()` de `next/headers` (async en Next.js 16). `setAll` en try/catch — las cookies de sesión las refresca el proxy (Step 6). _Verificable:_ `tsc --noEmit` pasa.
 
 5. **Crear `lib/supabase/middleware.ts`.** Exporta `updateSession(request: NextRequest)` que crea un `createServerClient` con las cookies del request, ejecuta `supabase.auth.getUser()`, y retorna el response con las cookies actualizadas. _Verificable:_ `tsc --noEmit` pasa.
 
-6. **Crear `middleware.ts` en raíz del proyecto** (o integrar si ya existe). Llama a `updateSession` de `lib/supabase/middleware.ts` en cada request. Excluye rutas estáticas (`_next/static`, `_next/image`, `favicon.ico`). _Verificable:_ `npm run dev` arranca; navegar a `/` no rompe; cookies de Supabase se inyectan.
+6. **Crear `proxy.ts` en raíz del proyecto** (o integrar si ya existe). Next.js 16 deprecó `middleware.ts` en favor de `proxy.ts` — usamos la convención nueva. Exporta `proxy()` que llama a `updateSession` de `lib/supabase/middleware.ts` en cada request. Excluye rutas estáticas (`_next/static`, `_next/image`, `favicon.ico`) vía `config.matcher`. _Verificable:_ `npm run dev` arranca; navegar a `/` no rompe; cookies de Supabase se inyectan.
 
 7. **Generar tipos TypeScript.** Ejecutar `npx supabase gen types typescript --project-id thgwxvlxcusuzmtzwctf > app/database.types.ts`. _Verificable:_ `app/database.types.ts` existe y exporta `Database` con estructura vacía.
 
@@ -122,9 +124,9 @@ Cada paso deja el sistema funcional. Commits chicos.
 - [ ] `@supabase/ssr` y `@supabase/supabase-js` aparecen en `package.json` como dependencias y están instaladas.
 - [ ] `.env.template` lista 5 variables: `RESEND_API_KEY`, `RESEND_TO`, `RESEND_FROM`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 - [ ] `lib/supabase/client-browser.ts` existe, exporta `createClient()` y usa `createBrowserClient`.
-- [ ] `lib/supabase/client-server.ts` existe, exporta `createClient(cookies)` y usa `createServerClient`.
+- [ ] `lib/supabase/client-server.ts` existe, exporta `createClient()` async y usa `createServerClient`.
 - [ ] `lib/supabase/middleware.ts` existe, exporta `updateSession(request)` y ejecuta `supabase.auth.getUser()`.
-- [ ] `middleware.ts` existe en la raíz del proyecto y llama a `updateSession` en cada request, excluyendo rutas estáticas.
+- [ ] `proxy.ts` existe en la raíz del proyecto y llama a `updateSession` en cada request, excluyendo rutas estáticas.
 - [ ] `app/database.types.ts` existe y exporta un tipo `Database` con estructura vacía (`Tables: Record<string, never>`).
 - [ ] `grep -rn "TODO(SPEC-04)" lib/` devuelve exactamente 3 hits (`storage.ts`, `useUser.ts`, `useScores.ts`).
 - [ ] `npm run dev` arranca sin errores ni warnings nuevos.
@@ -143,7 +145,7 @@ Cada paso deja el sistema funcional. Commits chicos.
 - **No:** solo instalar `@supabase/supabase-js`. No soporta el patrón de cookies de Next.js, causaría problemas de sesión en server.
 - **Yes:** tres archivos separados en `lib/supabase/` (browser, server, middleware). Separa concerns, cada uno importa solo lo que necesita.
 - **No:** un solo archivo `lib/supabase/index.ts` con todo. Mezcla contextos de ejecución y complica tree-shaking.
-- **Yes:** middleware en raíz del proyecto. Supabase necesita interceptar cada request para refrescar cookies de sesión.
+- **Yes:** `proxy.ts` en raíz del proyecto (convención de Next.js 16, que deprecó `middleware.ts`). Supabase necesita interceptar cada request para refrescar cookies de sesión. Se mantiene `lib/supabase/middleware.ts` con `updateSession` como módulo utilidad.
 - **No:** omitir middleware. Las sesiones expirarían sin refresh, el usuario se desloggearía sin aviso.
 - **Yes:** excluir rutas estáticas (`_next/static`, `_next/image`, `favicon.ico`) en el middleware. Evita overhead innecesario en assets que no necesitan sesión.
 - **No:** ejecutar middleware en cada request incluyendo estáticos. Impacto de rendimiento sin beneficio.
@@ -162,14 +164,14 @@ Cada paso deja el sistema funcional. Commits chicos.
 
 ## Risks
 
-| Riesgo                                                                    | Mitigación                                                                                                                                           |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `middleware.ts` en raíz intercepta assets estáticos y degrada rendimiento | Excluye `_next/static`, `_next/image`, `favicon.ico` en el matcher del middleware.                                                                   |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` expuesta al cliente                | Es por diseño — la publishable key es pública. Row Level Security (RLS) protegerá los datos cuando existan tablas. Hoy la DB está vacía, sin riesgo. |
-| Tipos generados quedan desactualizados al crear tablas en specs futuros   | Cada spec que cree tablas debe ejecutar `supabase gen types typescript` y actualizar `app/database.types.ts`. Documentado en el archivo.             |
-| `@supabase/ssr` puede tener breaking changes entre versiones              | Pinear versión mayor (`^0.x`). Aceptable en fase activa de desarrollo.                                                                               |
-| Cookies de Supabase compiten con cookies de Resend o futuras features     | No hay conflicto hoy — Resend no usa cookies. Si surge, se documenta en el spec correspondiente.                                                     |
-| El middleware añade latencia a cada request                               | La operación `getUser()` es ligera (~1ms). Si se vuelve cuello de botella, se puede cachear o condicionar por ruta.                                  |
+| Riesgo                                                                  | Mitigación                                                                                                                                           |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `proxy.ts` en raíz intercepta assets estáticos y degrada rendimiento    | Excluye `_next/static`, `_next/image`, `favicon.ico` en el matcher del proxy.                                                                        |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` expuesta al cliente              | Es por diseño — la publishable key es pública. Row Level Security (RLS) protegerá los datos cuando existan tablas. Hoy la DB está vacía, sin riesgo. |
+| Tipos generados quedan desactualizados al crear tablas en specs futuros | Cada spec que cree tablas debe ejecutar `supabase gen types typescript` y actualizar `app/database.types.ts`. Documentado en el archivo.             |
+| `@supabase/ssr` puede tener breaking changes entre versiones            | Pinear versión mayor (`^0.x`). Aceptable en fase activa de desarrollo.                                                                               |
+| Cookies de Supabase compiten con cookies de Resend o futuras features   | No hay conflicto hoy — Resend no usa cookies. Si surge, se documenta en el spec correspondiente.                                                     |
+| El middleware añade latencia a cada request                             | La operación `getUser()` es ligera (~1ms). Si se vuelve cuello de botella, se puede cachear o condicionar por ruta.                                  |
 
 ---
 
