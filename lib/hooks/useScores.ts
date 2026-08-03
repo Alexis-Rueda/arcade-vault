@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useSyncExternalStore, useCallback } from "react";
-import { readScores, appendScore, subscribe } from "@/lib/storage";
-import type { ScoreEntry } from "@/app/data/types";
+// TODO(SPEC-04): migrar a Supabase — ver spec de integración
+import { useSyncExternalStore, useCallback } from 'react';
+import { readScores, appendScore, subscribe } from '@/lib/storage';
+import type { ScoreEntry } from '@/app/data/types';
 
 let scoresCache: ScoreEntry[] | undefined;
 
@@ -24,9 +25,13 @@ function subscribeWithCache(cb: () => void) {
 }
 
 export function useScores() {
-  const scores = useSyncExternalStore(subscribeWithCache, getSnapshot, getServerSnapshot);
+  const scores = useSyncExternalStore(
+    subscribeWithCache,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
-  const addScore = useCallback((entry: Omit<ScoreEntry, "at">) => {
+  const addScore = useCallback((entry: Omit<ScoreEntry, 'at'>) => {
     appendScore(entry);
   }, []);
 
