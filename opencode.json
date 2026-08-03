@@ -4,6 +4,23 @@
         "playwright": {
             "type": "local",
             "command": ["npx", "@playwright/mcp@latest"]
+        },
+        "supabase": {
+            "type": "remote",
+            "url": "https://mcp.supabase.com/mcp?project_ref=thgwxvlxcusuzmtzwctf&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching",
+            "enabled": true
+        }
+    },
+    "formatter": {
+        "prettier": {}
+    },
+    "experimental": {
+        "hook": {
+            "file_edited": {
+                "*.{ts,tsx,jsx,js}": [
+                    { "command": ["npx", "eslint", "--fix", "$FILE"] }
+                ]
+            }
         }
     }
 }

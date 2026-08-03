@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arkanoid</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+  canvas {
+    display: block;
+    border: 1px solid #333;
+  }
+  #controls-hud {
+    width: 800px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-top: none;
+    padding: 6px 10px;
+    font: 12px monospace;
+    color: #888;
+    display: flex;
+    gap: 20px;
+  }
+  #controls-hud span {
+    color: #ff0;
+  }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="controls-hud">
+  <div><span>← → / Mouse</span> Mover paddle</div>
+  <div><span>Espacio / Clic izq.</span> Sacar</div>
+  <div><span>Clic der. / P / Esc</span> Pausa</div>
+  <div><span>Clic</span> Reiniciar</div>
+</div>
+
+<script src="assets/spritesheet.js"></script>
+<script src="levels.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
