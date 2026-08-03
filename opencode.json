@@ -5,5 +5,17 @@
             "type": "local",
             "command": ["npx", "@playwright/mcp@latest"]
         }
+    },
+    "formatter": {
+        "prettier": {}
+    },
+    "experimental": {
+        "hook": {
+            "file_edited": {
+                "*.{ts,tsx,jsx,js}": [
+                    { "command": ["npx", "eslint", "--fix", "$FILE"] }
+                ]
+            }
+        }
     }
 }
