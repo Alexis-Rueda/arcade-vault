@@ -1,4 +1,5 @@
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
@@ -11,6 +12,7 @@ Next.js 16.2.10 + React 19.2.4 + Tailwind CSS v4 + TypeScript 5.
 ## Skills
 
 Usa siempre /frontend-design para diseñar interfaces de usuario.
+Usa /add-game para diseñar el spec de un juego nuevo (port desde `references/started-games/` o desde cero) con su leaderboard en Supabase. Solo genera el spec; la implementación va por /spec-impl.
 
 ## Architecture
 

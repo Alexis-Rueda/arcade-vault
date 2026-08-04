@@ -40,11 +40,11 @@ export async function fetchLeaderboard(
 export async function fetchPlayerBest(
   gameId: string,
   playerName: string,
-): Promise<number | null> {
+): Promise<{ score: number; date: string } | null> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('scores')
-    .select('score')
+    .select('player_name, score, created_at')
     .eq('game_id', gameId)
     .eq('player_name', playerName)
     .order('score', { ascending: false })
@@ -55,7 +55,7 @@ export async function fetchPlayerBest(
     throw new Error(error.message);
   }
 
-  return data ? data.score : null;
+  return data ? { score: data.score, date: formatDate(data.created_at) } : null;
 }
 
 export async function insertScore(entry: ScoreInsert): Promise<void> {

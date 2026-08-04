@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Leaderboard } from './Leaderboard';
+import { isRealGame } from '@/lib/games/registry';
 import type { Game } from '@/app/data/types';
 
 export function GameDetailScreen({ game }: { game: Game }) {
@@ -70,7 +71,7 @@ export function GameDetailScreen({ game }: { game: Game }) {
       </div>
 
       <aside>
-        <Leaderboard gameId={game.id} real={game.id === 'asteroides'} />
+        <Leaderboard gameId={game.id} real={isRealGame(game.id)} />
       </aside>
     </div>
   );
