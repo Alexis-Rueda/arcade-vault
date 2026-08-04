@@ -1,4 +1,4 @@
-export type GameCategory = "ARCADE" | "PUZZLE" | "SHOOTER" | "VERSUS";
+export type GameCategory = 'ARCADE' | 'PUZZLE' | 'SHOOTER' | 'VERSUS';
 
 export type Game = {
   id: string;
@@ -7,7 +7,8 @@ export type Game = {
   long: string;
   cat: GameCategory;
   cover: string;
-  color: "cyan" | "magenta" | "yellow" | "green";
+  color: 'cyan' | 'magenta' | 'yellow' | 'green';
+  real?: boolean;
   best: number;
   plays: string;
 };
@@ -32,9 +33,9 @@ export type ScoreRow = {
 };
 
 export type Route =
-  | { name: "home" }
-  | { name: "games" }
-  | { name: "games-detail"; id: string }
-  | { name: "player"; id: string }
-  | { name: "auth" }
-  | { name: "salon" };
+  | { name: 'home' }
+  | { name: 'games' }
+  | { name: 'games-detail'; id: string }
+  | { name: 'player'; id: string }
+  | { name: 'auth' }
+  | { name: 'salon' };

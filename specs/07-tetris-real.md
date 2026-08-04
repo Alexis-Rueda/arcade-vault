@@ -1,6 +1,6 @@
 # SPEC 07 — TETRIS, segundo juego real (port a Next.js)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05 (juego real), SPEC 06 (leaderboard Supabase)
 > **Date:** 2026-08-04
 > **Objective:** Portar el Tetris de `references/started-games/03-tetris/` a la plataforma como segundo juego real — con su ficha, engine en `lib/games/tetris/`, layout de doble canvas, leaderboard Supabase y registro genérico que sustituye los checks hardcodeados de `asteroides`.
@@ -16,6 +16,7 @@
 - Extensión aditiva del contrato y host: `onLines?:` en `GameCallbacks`; `extra?: { previewCanvas }` en `GameEngineFactory`; `GameCanvas` acepta `width`/`height` y un `preview` opcional (2º canvas). `Asteroides` no cambia.
 - Port literal a `lib/games/tetris/` (`constants.ts`/`engine.ts`/`index.ts`): tablero 10×20 (300×600), 8 piezas incl. tuerca "N", wall kicks `[0,±1,±2]`, ghost (alpha 0.2), soft/hard drop, `LINE_SCORES=[0,100,300,500,800]×nivel`, `dropInterval=max(100, 1000−(nivel−1)·90)ms`, nivel=`⌊líneas/10⌋+1`. Lives: engine emite `onLives(1)` al iniciar y `onLives(0)` al perder. Sin tecla P, sin tema claro/oscuro, sin overlay DOM ni botón restart. Guard `MAX_DT=50ms`. API `createTetrisGame(canvas, callbacks, extra)`.
 - Wrapper aislado `components/games/TetrisGame.tsx` ("use client"): **dos canvas** — tablero 300×600 centrado + preview 120×120 a la derecha y desalineado (CSS), y panel `NEXT` + `LINES` + `SCORE` alimentado por `onLines`/`onScore`.
+- Selector de color (skin) en `TetrisGame.tsx`: 4 paletas — RETRO, NEON, PASTEL y PIXEL ART — que recolorean en vivo piezas, ghost y preview **sin reiniciar** la partida. Se aplica vía `extra.palette` (ref mutable) en la factory; `GameCanvas` acepta la prop aditiva `palette`.
 - Guardado: `tetris` persiste con `insertScore` (rama genérica `isRealGame`); toast "▸ PUNTUACIÓN GUARDADA_" solo tras éxito; bloqueo de doble guardado (flags existentes).
 - Salón de la Fama: pestaña TETRIS top 12 real con empty state "SIN PUNTUACIONES TODAVÍA"; "▸ TU MEJOR MARCA" con `fetchPlayerBest` (solo con usuario).
 - Leaderboard de detalle: `tetris` top 10 real con empty state.
@@ -113,6 +114,27 @@ No cambia el esquema → no se regenera `app/database.types.ts`.
 - `engine.ts` — `TetrisEngine implements GameEngine`: board/current/next, rotateCW + tryRotate (kicks), collide, merge, clearLines, ghostY, soft/hard drop, spawn, loop por acumulador, draw (tablero) y drawNext (preview).
 - `index.ts` — exporta `createTetrisGame: GameEngineFactory`.
 
+### Skins — paletas de color (aditivo, enmienda)
+
+`lib/games/tetris/constants.ts` — `PALETTES` con 4 paletas de 8 colores (índices 1–8, 0 = vacío): `retro` (paleta del fuente), `neon`, `pastel` y `pixel`. `COLORS` sigue siendo el fallback.
+
+`lib/games/types.ts` — `extra` extendido (aditivo):
+
+```ts
+export type GameEngineFactory = (
+  canvas: HTMLCanvasElement,
+  callbacks: GameCallbacks,
+  extra?: {
+    previewCanvas?: HTMLCanvasElement | null;
+    palette?: { current: (string | null)[] } | null;
+  },
+) => GameEngine;
+```
+
+`components/games/GameCanvas.tsx` — prop aditiva `palette?: { current: (string | null)[] }` → se pasa a la factory vía `extra.palette`. El engine lee `palette.current` en cada draw (fallback `COLORS`); cambiar `current` recolorea en vivo sin reiniciar.
+
+`components/games/TetrisGame.tsx` — chips RETRO / NEON / PASTEL / PIXEL ART (clases `.tetris-skins`/`.tetris-skin-chip` en `globals.css`); estado local del skin + ref mutable pasada al `GameCanvas`.
+
 ### `app/globals.css` — `.cover-tetris`, `.tetris-stage`, `.tetris-panel`, `.tetris-preview`
 
 Cover inspirada en `.cover-asteroides` (gradiente radial oscuro + bloques); clases del layout de doble canvas; sin tocar selectores existentes.
@@ -130,6 +152,7 @@ Cover inspirada en `.cover-asteroides` (gradiente radial oscuro + bloques); clas
 7. **Migración SQL de seed** de `tetris` en `public.games` (vía `apply_migration`). _Verificable:_ `supabase_list_tables`; `insertScore` de prueba funciona con anon key.
 8. **Leaderboard y Salón de la Fama reales** para `tetris` (ya genérico tras los pasos 2/6): top 10 detalle, top 12 salón, empty states, "TU MEJOR MARCA". _Verificable:_ las filas recién guardadas aparecen.
 9. **Verificación end-to-end manual** (jugable, HUD React ↔ canvas, pausa, FIN, game over, guardado, navegación sin rAF huérfano; regresiones en los otros juegos).
+10. **Selector de color (skins):** `PALETTES` en `constants.ts`; `extra.palette` en el contrato + prop `palette` en `GameCanvas`; engine lee la ref mutable; chips RETRO/NEON/PASTEL/PIXEL ART en el wrapper. _Verificable:_ cambiar de paleta recolorea en vivo tablero/ghost/preview sin reiniciar ni perder el estado.
 
 ---
 
@@ -140,6 +163,7 @@ Cover inspirada en `.cover-asteroides` (gradiente radial oscuro + bloques); clas
 - [ ] `lib/games/registry.ts` registra `asteroides` y `tetris`; ningún componente compara `game.id === 'asteroides'`.
 - [ ] `GameCanvas` soporta `width`/`height`/`preview`; `AsteroidesGame` sin cambios visuales.
 - [ ] `/player/tetris` muestra el tablero centrado y el preview a la derecha desalineado; el panel muestra NEXT/LINES/SCORE.
+- [ ] El selector de color (RETRO/NEON/PASTEL/PIXEL ART) recolorea en vivo piezas, ghost y preview sin reiniciar la partida.
 - [ ] El HUD React coincide en vivo (score, nivel, vidas=1); LINES llega vía `onLines`.
 - [ ] PAUSA congela y muestra "EN PAUSA"; FIN y game over abren el modal con el puntaje real.
 - [ ] Guardar crea una fila en `scores` con `player_name`, `score` y `user_id: null`; el toast aparece solo tras éxito.
@@ -171,6 +195,7 @@ Cover inspirada en `.cover-asteroides` (gradiente radial oscuro + bloques); clas
 - **Yes:** `best: 0` / `plays: "0"`.
 - **Yes:** `tetris` tras `asteroides` en `GAMES`; default de pestaña del salón = `GAMES[0]` (asteroides).
 - **Yes:** guard `MAX_DT=50ms` en el acumulador del loop (no está en el fuente) para evitar espiral de muerte por blur, como en Asteroides.
+- **Yes:** selector de color con 4 paletas (RETRO/NEON/PASTEL/PIXEL ART) en el wrapper, aplicado vía `extra.palette` (ref mutable) para cambio en vivo sin reiniciar. Pedido explícito del usuario tras iniciar la implementación (enmienda al spec).
 - **No:** audio, táctil, DAS/auto-repeat, realtime, tests automatizados.
 
 ---

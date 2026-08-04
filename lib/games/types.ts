@@ -2,6 +2,7 @@ export type GameCallbacks = {
   onScore?: (score: number) => void;
   onLives?: (lives: number) => void;
   onLevel?: (level: number) => void;
+  onLines?: (lines: number) => void;
   onGameOver?: (finalScore: number) => void;
 };
 
@@ -15,6 +16,10 @@ export interface GameEngine {
 export type GameEngineFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  extra?: {
+    previewCanvas?: HTMLCanvasElement | null;
+    palette?: { current: (string | null)[] } | null;
+  },
 ) => GameEngine;
 
 export type GameHandle = { end(): void; reset(): void };

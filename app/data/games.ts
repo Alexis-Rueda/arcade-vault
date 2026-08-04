@@ -21,6 +21,18 @@ export const GAMES: ReadonlyArray<Game> = [
     plays: '0',
   },
   {
+    id: 'tetris',
+    title: 'TETRIS',
+    short: 'Rota, encaja y limpia líneas antes del colapso.',
+    long: 'Ocho piezas cromáticas descienden sin piedad desde la oscuridad. Rótalas, encástralas y limpia líneas para subir de nivel mientras la caída se acelera. Una sola vida y un techo implacable: cada bloque cuenta.',
+    cat: 'PUZZLE',
+    cover: 'cover-tetris',
+    color: 'cyan',
+    real: true,
+    best: 0,
+    plays: '0',
+  },
+  {
     id: 'bloque-buster',
     title: 'BLOQUE BUSTER',
     short: 'Rebota la pelota y destruye muros de neón.',

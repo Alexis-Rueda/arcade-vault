@@ -14,6 +14,10 @@ type Props = {
   paused: boolean;
   handleRef: { current: GameHandle | null };
   className?: string;
+  width?: number;
+  height?: number;
+  preview?: { width: number; height: number; className?: string };
+  palette?: { current: (string | null)[] } | null;
 };
 
 export function GameCanvas({
@@ -22,8 +26,13 @@ export function GameCanvas({
   paused,
   handleRef,
   className,
+  width = 800,
+  height = 600,
+  preview,
+  palette,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const previewRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
   const callbacksRef = useRef(callbacks);
 
@@ -36,6 +45,7 @@ export function GameCanvas({
       onScore: (s: number) => callbacksRef.current.onScore?.(s),
       onLives: (l: number) => callbacksRef.current.onLives?.(l),
       onLevel: (l: number) => callbacksRef.current.onLevel?.(l),
+      onLines: (l: number) => callbacksRef.current.onLines?.(l),
       onGameOver: (s: number) => callbacksRef.current.onGameOver?.(s),
     }),
     [],
@@ -44,7 +54,10 @@ export function GameCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const engine = factory(canvas, stableCallbacks);
+    const engine = factory(canvas, stableCallbacks, {
+      previewCanvas: previewRef.current,
+      palette,
+    });
     engineRef.current = engine;
     handleRef.current = {
       end: () => engine.endGame(),
@@ -55,13 +68,28 @@ export function GameCanvas({
       engineRef.current = null;
       handleRef.current = null;
     };
-  }, [factory, stableCallbacks, handleRef]);
+  }, [factory, stableCallbacks, handleRef, palette]);
 
   useEffect(() => {
     engineRef.current?.setPaused(paused);
   }, [paused]);
 
   return (
-    <canvas ref={canvasRef} width={800} height={600} className={className} />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className={className}
+      />
+      {preview && (
+        <canvas
+          ref={previewRef}
+          width={preview.width}
+          height={preview.height}
+          className={preview.className}
+        />
+      )}
+    </>
   );
 }

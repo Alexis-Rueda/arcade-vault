@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { GAMES } from '@/app/data/games';
 import { seededScores } from '@/app/data/scores';
 import { fetchLeaderboard, fetchPlayerBest } from '@/lib/supabase/scores';
+import { isRealGame } from '@/lib/games/registry';
 import { Podium } from './Podium';
 import { useUser } from '@/lib/hooks/useUser';
 import type { ScoreRow } from '@/app/data/types';
@@ -12,16 +13,19 @@ import type { ScoreRow } from '@/app/data/types';
 export function HallOfFameScreen() {
   const { user } = useUser();
   const router = useRouter();
-  const [tab, setTab] = useState('asteroides');
+  const [tab, setTab] = useState(GAMES[0].id);
 
-  const isReal = tab === 'asteroides';
+  const isReal = isRealGame(tab);
   const [realRows, setRealRows] = useState<ScoreRow[] | null>(null);
-  const [youBest, setYouBest] = useState<number | null>(null);
+  const [youBest, setYouBest] = useState<{
+    score: number;
+    date: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isReal) return;
     let cancelled = false;
-    fetchLeaderboard('asteroides', 12)
+    fetchLeaderboard(tab, 12)
       .then((rows) => {
         if (!cancelled) setRealRows(rows);
       })
@@ -31,7 +35,7 @@ export function HallOfFameScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isReal]);
+  }, [tab, isReal]);
 
   useEffect(() => {
     if (!isReal || !user) {
@@ -39,9 +43,9 @@ export function HallOfFameScreen() {
       return;
     }
     let cancelled = false;
-    fetchPlayerBest('asteroides', user.name)
-      .then((n) => {
-        if (!cancelled) setYouBest(n);
+    fetchPlayerBest(tab, user.name)
+      .then((best) => {
+        if (!cancelled) setYouBest(best);
       })
       .catch(() => {
         if (!cancelled) setYouBest(null);
@@ -49,7 +53,7 @@ export function HallOfFameScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isReal, user]);
+  }, [tab, isReal, user]);
 
   const rows = useMemo(
     () => (isReal ? (realRows ?? []) : seededScores(tab.length * 23 + 7, 12)),
@@ -62,7 +66,7 @@ export function HallOfFameScreen() {
       (realRows?.length ?? 0) + 1
     : Math.floor(8 + (tab.length % 4));
   const youScore = isReal
-    ? (youBest ?? 0)
+    ? (youBest?.score ?? 0)
     : user
       ? rows[5]?.score - 2400
       : null;
@@ -139,7 +143,9 @@ export function HallOfFameScreen() {
               >
                 {(youScore ?? 9999).toLocaleString('es-ES')}
               </div>
-              <div className="dt">11/05/2026</div>
+              <div className="dt">
+                {isReal ? (youBest?.date ?? '—') : '11/05/2026'}
+              </div>
             </div>
           </>
         )}

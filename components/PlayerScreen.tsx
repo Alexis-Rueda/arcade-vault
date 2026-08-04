@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CrtFrame } from './CrtFrame';
-import { AsteroidesGame } from './games/AsteroidesGame';
 import { useUser } from '@/lib/hooks/useUser';
 import { useScores } from '@/lib/hooks/useScores';
 import { insertScore } from '@/lib/supabase/scores';
+import { getRealGame } from '@/lib/games/registry';
 import type { Game } from '@/app/data/types';
 import type { GameHandle } from '@/lib/games/types';
 
@@ -26,17 +26,19 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [engineLevel, setEngineLevel] = useState(1);
   const gameRef = useRef<GameHandle | null>(null);
 
+  const realGame = useMemo(() => getRealGame(game.id), [game.id]);
+
   const derivedLevel = useMemo(() => Math.floor(score / 2500) + 1, [score]);
-  const level = game.id === 'asteroides' ? engineLevel : derivedLevel;
+  const level = realGame ? engineLevel : derivedLevel;
 
   useEffect(() => {
-    if (game.id === 'asteroides' || over || paused) return;
+    if (realGame || over || paused) return;
     const t = setInterval(
       () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
       220,
     );
     return () => clearInterval(t);
-  }, [over, paused, game.id]);
+  }, [over, paused, realGame]);
 
   const endGame = () => setOver(true);
   const restart = () => {
@@ -53,7 +55,7 @@ export function PlayerScreen({ game }: { game: Game }) {
 
   const handleSave = async () => {
     if (saving || saved) return;
-    if (game.id === 'asteroides') {
+    if (realGame) {
       setSaving(true);
       setSaveError(false);
       try {
@@ -100,7 +102,7 @@ export function PlayerScreen({ game }: { game: Game }) {
           <button
             className="btn magenta"
             onClick={() => {
-              if (game.id === 'asteroides') {
+              if (realGame) {
                 return gameRef.current?.end() ?? endGame();
               }
               return endGame();
@@ -118,8 +120,8 @@ export function PlayerScreen({ game }: { game: Game }) {
       </div>
 
       <CrtFrame title={game.title}>
-        {game.id === 'asteroides' ? (
-          <AsteroidesGame
+        {realGame ? (
+          <realGame.Component
             paused={paused}
             onScore={setScore}
             onLives={setLives}
