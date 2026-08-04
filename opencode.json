@@ -3,7 +3,11 @@
     "mcp": {
         "playwright": {
             "type": "local",
-            "command": ["npx", "@playwright/mcp@latest"]
+            "command": [
+                "npx",
+                "@playwright/mcp@latest",
+                "--screenshot-dir=.playwright-screenshots"
+            ]
         },
         "supabase": {
             "type": "remote",
