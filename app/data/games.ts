@@ -10,6 +10,17 @@ export const CATS: ReadonlyArray<'TODOS' | GameCategory> = [
 
 export const GAMES: ReadonlyArray<Game> = [
   {
+    id: 'asteroides',
+    title: 'ASTEROIDES',
+    short: 'Pulveriza rocas en gravedad cero.',
+    long: 'Tu nave triangular flota en vacío absoluto. Dispara y rota para dividir rocas en fragmentos cada vez más pequeños. Con la racha justa desbloqueas disparo triple.',
+    cat: 'SHOOTER',
+    cover: 'cover-asteroides',
+    color: 'yellow',
+    best: 0,
+    plays: '0',
+  },
+  {
     id: 'bloque-buster',
     title: 'BLOQUE BUSTER',
     short: 'Rebota la pelota y destruye muros de neón.',
@@ -74,17 +85,6 @@ export const GAMES: ReadonlyArray<Game> = [
     color: 'yellow',
     best: 41200,
     plays: '15.6K',
-  },
-  {
-    id: 'asteroides',
-    title: 'ASTEROIDES',
-    short: 'Pulveriza rocas en gravedad cero.',
-    long: 'Tu nave triangular flota en vacío absoluto. Dispara y rota para dividir rocas en fragmentos cada vez más pequeños. Con la racha justa desbloqueas disparo triple.',
-    cat: 'SHOOTER',
-    cover: 'cover-asteroides',
-    color: 'yellow',
-    best: 0,
-    plays: '0',
   },
   {
     id: 'ranaria',

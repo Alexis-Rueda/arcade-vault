@@ -1,35 +1,87 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { GAMES } from "@/app/data/games";
-import { seededScores } from "@/app/data/scores";
-import { Podium } from "./Podium";
-import { useUser } from "@/lib/hooks/useUser";
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { GAMES } from '@/app/data/games';
+import { seededScores } from '@/app/data/scores';
+import { fetchLeaderboard, fetchPlayerBest } from '@/lib/supabase/scores';
+import { Podium } from './Podium';
+import { useUser } from '@/lib/hooks/useUser';
+import type { ScoreRow } from '@/app/data/types';
 
 export function HallOfFameScreen() {
   const { user } = useUser();
   const router = useRouter();
-  const [tab, setTab] = useState(GAMES[0].id);
+  const [tab, setTab] = useState('asteroides');
 
-  const rows = useMemo(() => seededScores(tab.length * 23 + 7, 12), [tab]);
+  const isReal = tab === 'asteroides';
+  const [realRows, setRealRows] = useState<ScoreRow[] | null>(null);
+  const [youBest, setYouBest] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isReal) return;
+    let cancelled = false;
+    fetchLeaderboard('asteroides', 12)
+      .then((rows) => {
+        if (!cancelled) setRealRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setRealRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isReal]);
+
+  useEffect(() => {
+    if (!isReal || !user) {
+      setYouBest(null);
+      return;
+    }
+    let cancelled = false;
+    fetchPlayerBest('asteroides', user.name)
+      .then((n) => {
+        if (!cancelled) setYouBest(n);
+      })
+      .catch(() => {
+        if (!cancelled) setYouBest(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isReal, user]);
+
+  const rows = useMemo(
+    () => (isReal ? (realRows ?? []) : seededScores(tab.length * 23 + 7, 12)),
+    [tab, isReal, realRows],
+  );
   const game = GAMES.find((g) => g.id === tab);
 
-  const youRank = user ? Math.floor(8 + (tab.length % 4)) : null;
-  const youScore = user ? (rows[5]?.score - 2400) : null;
+  const youRank = isReal
+    ? (realRows?.findIndex((r) => r.name === user?.name) ?? -1) + 1 ||
+      (realRows?.length ?? 0) + 1
+    : Math.floor(8 + (tab.length % 4));
+  const youScore = isReal
+    ? (youBest ?? 0)
+    : user
+      ? rows[5]?.score - 2400
+      : null;
+  const showEmpty = isReal && realRows !== null && realRows.length === 0;
 
   return (
     <div className="av-hall fade-in">
       <div className="hall-head">
         <h1>SALÓN DE LA FAMA</h1>
-        <p className="pixel" style={{ fontSize: 10 }}>LOS NOMBRES QUE NUNCA SE BORRAN DE LA PANTALLA</p>
+        <p className="pixel" style={{ fontSize: 10 }}>
+          LOS NOMBRES QUE NUNCA SE BORRAN DE LA PANTALLA
+        </p>
       </div>
 
       <div className="hall-tabs">
         {GAMES.map((g) => (
           <button
             key={g.id}
-            className={"chip" + (tab === g.id ? " active" : "")}
+            className={'chip' + (tab === g.id ? ' active' : '')}
             onClick={() => setTab(g.id)}
           >
             {g.title}
@@ -46,26 +98,46 @@ export function HallOfFameScreen() {
           <div>PUNTUACIÓN</div>
           <div>FECHA</div>
         </div>
-        {rows.map((r, i) => (
-          <div
-            key={r.name + i}
-            className={"tr" + (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-            <div className="pl">{r.name}</div>
-            <div className="sc">{r.score.toLocaleString("es-ES")}</div>
-            <div className="dt">{r.date}</div>
-          </div>
-        ))}
+        {showEmpty ? (
+          <div className="hall-empty">SIN PUNTUACIONES TODAVÍA</div>
+        ) : (
+          rows.map((r, i) => (
+            <div
+              key={r.name + i}
+              className={
+                'tr' +
+                (i === 0 ? ' top1' : i === 1 ? ' top2' : i === 2 ? ' top3' : '')
+              }
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="rk">#{String(r.rank).padStart(2, '0')}</div>
+              <div className="pl">{r.name}</div>
+              <div className="sc">{r.score.toLocaleString('es-ES')}</div>
+              <div className="dt">{r.date}</div>
+            </div>
+          ))
+        )}
         {user && game && (
           <>
             <div className="tr you-label">▸ TU MEJOR MARCA EN {game.title}</div>
-            <div className="tr you" style={{ animationDelay: `${rows.length * 50 + 50}ms` }}>
-              <div className="rk" style={{ color: "var(--yellow)" }}>#{String(youRank).padStart(2, "0")}</div>
-              <div className="pl" style={{ color: "var(--yellow)" }}>{user.name}</div>
-              <div className="sc" style={{ color: "var(--yellow)", textShadow: "0 0 6px rgba(245,255,0,0.5)" }}>
-                {(youScore ?? 9999).toLocaleString("es-ES")}
+            <div
+              className="tr you"
+              style={{ animationDelay: `${rows.length * 50 + 50}ms` }}
+            >
+              <div className="rk" style={{ color: 'var(--yellow)' }}>
+                #{String(youRank).padStart(2, '0')}
+              </div>
+              <div className="pl" style={{ color: 'var(--yellow)' }}>
+                {user.name}
+              </div>
+              <div
+                className="sc"
+                style={{
+                  color: 'var(--yellow)',
+                  textShadow: '0 0 6px rgba(245,255,0,0.5)',
+                }}
+              >
+                {(youScore ?? 9999).toLocaleString('es-ES')}
               </div>
               <div className="dt">11/05/2026</div>
             </div>
@@ -73,8 +145,10 @@ export function HallOfFameScreen() {
         )}
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 32 }}>
-        <button className="btn lg" onClick={() => router.push("/games")}>VOLVER A LA BIBLIOTECA</button>
+      <div style={{ textAlign: 'center', marginTop: 32 }}>
+        <button className="btn lg" onClick={() => router.push('/games')}>
+          VOLVER A LA BIBLIOTECA
+        </button>
       </div>
     </div>
   );
