@@ -6,6 +6,7 @@ import { CrtFrame } from './CrtFrame';
 import { AsteroidesGame } from './games/AsteroidesGame';
 import { useUser } from '@/lib/hooks/useUser';
 import { useScores } from '@/lib/hooks/useScores';
+import { insertScore } from '@/lib/supabase/scores';
 import type { Game } from '@/app/data/types';
 import type { GameHandle } from '@/lib/games/types';
 
@@ -20,6 +21,8 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : 'INVITADO');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [engineLevel, setEngineLevel] = useState(1);
   const gameRef = useRef<GameHandle | null>(null);
 
@@ -43,10 +46,26 @@ export function PlayerScreen({ game }: { game: Game }) {
     setPaused(false);
     setOver(false);
     setSaved(false);
+    setSaving(false);
+    setSaveError(false);
     gameRef.current?.reset();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (saving || saved) return;
+    if (game.id === 'asteroides') {
+      setSaving(true);
+      setSaveError(false);
+      try {
+        await insertScore({ gameId: game.id, playerName: name, score });
+        setSaved(true);
+      } catch {
+        setSaveError(true);
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     addScore({ game: game.id, score, name });
     setSaved(true);
   };
@@ -161,10 +180,19 @@ export function PlayerScreen({ game }: { game: Game }) {
                     }
                     placeholder="TUS INICIALES"
                   />
-                  <button className="btn yellow" onClick={handleSave}>
-                    GUARDAR PUNTUACIÓN
+                  <button
+                    className="btn yellow"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
+                    {saving ? 'GUARDANDO…' : 'GUARDAR PUNTUACIÓN'}
                   </button>
                 </div>
+                {saveError && (
+                  <div className="toast-error">
+                    ▸ ERROR AL GUARDAR — INTÉNTALO DE NUEVO_
+                  </div>
+                )}
               </>
             ) : (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
