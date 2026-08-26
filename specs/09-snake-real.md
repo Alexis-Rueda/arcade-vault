@@ -1,6 +1,6 @@
 # SPEC 09 — SNAKE, juego real desde cero
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05 (juego real), SPEC 06 (leaderboard Supabase)
 > **Date:** 2026-08-26
 > **Objective:** Añadir el juego SNAKE como cuarto juego real del catálogo, con engine desde cero, leaderboard en Supabase y sprites de frutas del atlas existente.
