@@ -16,6 +16,7 @@ import {
   BALL_SPEEDS,
 } from './constants';
 import type { RowColor } from './constants';
+import { drawWallBorder } from '../drawWallBorder';
 
 interface Block {
   x: number;
@@ -423,6 +424,8 @@ export class ArkanoidEngine implements GameEngine {
     const ctx = this.ctx;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
+
+    drawWallBorder(ctx, W, H);
 
     if (this.screen === 'title') {
       this.drawTitle();
