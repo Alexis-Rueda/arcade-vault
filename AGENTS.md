@@ -26,3 +26,7 @@ Usa /add-game para diseñar el spec de un juego nuevo (port desde `references/st
 - Write specs in `spec/`, implementations in `spec-impl/` (directories don't exist yet — create as needed)
 - Methodology: `https://github.com/Klerith/fernando-skills`
 - Run `npx skills@latest add Klerith/fernando-skills` to install tooling
+
+## Playwright MCP
+
+Los screenshots de Playwright se guardan en `.playwright-screenshots/`.

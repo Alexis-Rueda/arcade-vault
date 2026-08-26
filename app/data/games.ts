@@ -33,6 +33,18 @@ export const GAMES: ReadonlyArray<Game> = [
     plays: '0',
   },
   {
+    id: 'arkanoid',
+    title: 'ARKANOID',
+    short: 'Rebota la pelota y destruye muros de bloques.',
+    long: 'Pilota una nave-paleta y rebota un núcleo de plasma para pulverizar muros de bloques cromáticos. Cinco niveles con diseños imposibles, velocidad progresiva y explosiones de sprites. ¿Hasta dónde llegarás?',
+    cat: 'ARCADE',
+    cover: 'cover-arkanoid',
+    color: 'cyan',
+    real: true,
+    best: 0,
+    plays: '0',
+  },
+  {
     id: 'bloque-buster',
     title: 'BLOQUE BUSTER',
     short: 'Rebota la pelota y destruye muros de neón.',

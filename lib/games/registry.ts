@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { AsteroidesGame } from '@/components/games/AsteroidesGame';
 import { TetrisGame } from '@/components/games/TetrisGame';
+import { ArkanoidGame } from '@/components/games/ArkanoidGame';
 import type { GameHandle } from '@/lib/games/types';
 
 export type RealGameWrapperProps = {
@@ -19,6 +20,7 @@ export const REAL_GAMES: readonly {
 }[] = [
   { id: 'asteroides', Component: AsteroidesGame },
   { id: 'tetris', Component: TetrisGame },
+  { id: 'arkanoid', Component: ArkanoidGame },
 ];
 
 export const isRealGame = (id: string): boolean =>
