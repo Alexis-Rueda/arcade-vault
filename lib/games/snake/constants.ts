@@ -1,0 +1,10 @@
+export const W = 800;
+export const H = 800;
+export const CELL = 40;
+export const COLS = 20;
+export const ROWS = 20;
+export const MAX_DT = 50;
+export const BASE_TICK = 150;
+export const MIN_TICK = 60;
+export const SPEED_INTERVAL = 5;
+export const POINTS_PER_FRUIT = 10;

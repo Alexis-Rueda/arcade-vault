@@ -730,21 +730,37 @@ a {
 }
 
 .cover-snake {
-  background: linear-gradient(135deg, #003a2a, #0a0a18);
+  background:
+    linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px) 0 0 /
+      40px 40px,
+    linear-gradient(0deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px) 0 0 / 40px
+      40px,
+    radial-gradient(circle at 50% 50%, #0a1a0a, #020a02);
 }
 .cover-snake::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle at 70% 50%, var(--magenta) 0 6px, transparent 7px),
-    linear-gradient(90deg, var(--green) 0 40px, transparent 40px) 20% 50% /
-      200px 12px no-repeat,
-    linear-gradient(90deg, var(--green) 0 12px, transparent 12px)
-      calc(20% + 40px) calc(50% - 12px) / 12px 12px no-repeat,
-    linear-gradient(90deg, var(--green) 0 12px, transparent 12px)
-      calc(20% + 28px) calc(50% - 12px) / 12px 12px no-repeat;
-  filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
+  background:
+    /* Fruta (círculo magenta) */
+    radial-gradient(circle at 72% 38%, #ff006e 0 8px, transparent 9px),
+    /* Cabeza de la serpiente */ linear-gradient(90deg, #00ff00, #00cc00) 55%
+      50% / 28px 28px no-repeat,
+    /* Segmento 2 */ linear-gradient(90deg, #00dd00, #00aa00) calc(55% - 30px)
+      50% / 26px 26px no-repeat,
+    /* Segmento 3 */ linear-gradient(90deg, #00bb00, #008800) calc(55% - 58px)
+      50% / 24px 24px no-repeat,
+    /* Segmento 4 (giro hacia abajo) */ linear-gradient(90deg, #009900, #006600)
+      calc(55% - 58px) calc(50% + 28px) / 22px 22px no-repeat,
+    /* Segmento 5 */ linear-gradient(90deg, #007700, #005500) calc(55% - 58px)
+      calc(50% + 52px) / 20px 20px no-repeat,
+    /* Brillo de la cabeza */
+    radial-gradient(
+        circle at calc(55% + 14px) calc(50% + 14px),
+        rgba(0, 255, 0, 0.4) 0 18px,
+        transparent 19px
+      );
+  filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.5));
 }
 
 .cover-glot {

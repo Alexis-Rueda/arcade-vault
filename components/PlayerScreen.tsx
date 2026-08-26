@@ -204,6 +204,12 @@ export function PlayerScreen({ game }: { game: Game }) {
                 JUGAR DE NUEVO
               </button>
               <button
+                className="btn"
+                onClick={() => router.push(`/games/${game.id}`)}
+              >
+                VER PUNTUACIONES
+              </button>
+              <button
                 className="btn magenta"
                 onClick={() => router.push('/games')}
               >
