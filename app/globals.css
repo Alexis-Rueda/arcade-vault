@@ -914,6 +914,55 @@ a {
   filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.4));
 }
 
+.cover-arkanoid {
+  background: radial-gradient(circle at 50% 100%, #0d1a2a, #000);
+}
+.cover-arkanoid::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(#ff006e, #ff006e) 0% 0%/16.6% 14%,
+    linear-gradient(#ff006e, #ff006e) 16.6% 0%/16.6% 14%,
+    linear-gradient(#ff006e, #ff006e) 33.2% 0%/16.6% 14%,
+    linear-gradient(#ff006e, #ff006e) 49.8% 0%/16.6% 14%,
+    linear-gradient(#ff006e, #ff006e) 66.4% 0%/16.6% 14%,
+    linear-gradient(#ff006e, #ff006e) 83% 0%/17% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 0% 14%/16.6% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 16.6% 14%/16.6% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 33.2% 14%/16.6% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 49.8% 14%/16.6% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 66.4% 14%/16.6% 14%,
+    linear-gradient(#f5ff00, #f5ff00) 83% 14%/17% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 0% 28%/16.6% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 16.6% 28%/16.6% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 33.2% 28%/16.6% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 49.8% 28%/16.6% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 66.4% 28%/16.6% 14%,
+    linear-gradient(#00f5ff, #00f5ff) 83% 28%/17% 14%,
+    linear-gradient(#00ff88, #00ff88) 0% 42%/16.6% 14%,
+    linear-gradient(#00ff88, #00ff88) 16.6% 42%/16.6% 14%,
+    linear-gradient(#00ff88, #00ff88) 33.2% 42%/16.6% 14%,
+    linear-gradient(#00ff88, #00ff88) 49.8% 42%/16.6% 14%,
+    linear-gradient(#00ff88, #00ff88) 66.4% 42%/16.6% 14%,
+    linear-gradient(#00ff88, #00ff88) 83% 42%/17% 14%,
+    linear-gradient(#ff7700, #ff7700) 0% 56%/16.6% 14%,
+    linear-gradient(#ff7700, #ff7700) 16.6% 56%/16.6% 14%,
+    linear-gradient(#ff7700, #ff7700) 33.2% 56%/16.6% 14%,
+    linear-gradient(#ff7700, #ff7700) 49.8% 56%/16.6% 14%,
+    linear-gradient(#ff7700, #ff7700) 66.4% 56%/16.6% 14%,
+    linear-gradient(#ff7700, #ff7700) 83% 56%/17% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 0% 70%/16.6% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 16.6% 70%/16.6% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 33.2% 70%/16.6% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 49.8% 70%/16.6% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 66.4% 70%/16.6% 14%,
+    linear-gradient(#9b59b6, #9b59b6) 83% 70%/17% 14%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.3));
+  image-rendering: pixelated;
+}
+
 /* ===== detail screen ===== */
 .av-detail {
   display: grid;

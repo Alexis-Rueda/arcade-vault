@@ -5,9 +5,9 @@
             "type": "local",
             "command": [
                 "npx",
-                "@playwright/mcp@latest",
-                "--screenshot-dir=.playwright-screenshots"
-            ]
+                "@playwright/mcp@latest"
+            ],
+            "enabled": true
         },
         "supabase": {
             "type": "remote",
