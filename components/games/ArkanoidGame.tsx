@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { GameCanvas } from './GameCanvas';
 import { createArkanoidGame } from '@/lib/games/arkanoid';
+import { PALETTES } from '@/lib/games/arkanoid/constants';
+import { useSkin } from '@/lib/hooks/useSkin';
 import type { GameHandle } from '@/lib/games/types';
 
 type Props = {
@@ -21,6 +24,13 @@ export function ArkanoidGame({
   onOver,
   handleRef,
 }: Props) {
+  const { skin } = useSkin();
+  const paletteRef = useRef<Record<string, string>>(PALETTES.clasico);
+
+  useEffect(() => {
+    paletteRef.current = PALETTES[skin];
+  }, [skin]);
+
   return (
     <div className="game-arena">
       <GameCanvas
@@ -36,6 +46,7 @@ export function ArkanoidGame({
         className="game-canvas"
         width={800}
         height={600}
+        palette={paletteRef}
       />
     </div>
   );

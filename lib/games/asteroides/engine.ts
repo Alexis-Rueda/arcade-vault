@@ -1,4 +1,4 @@
-import type { GameCallbacks, GameEngine } from '../types';
+import type { GameCallbacks, GameEngine, PaletteRef } from '../types';
 import {
   W,
   H,
@@ -13,6 +13,7 @@ import {
   START_ASTEROIDS,
   SAFE_DIST,
   DEAD_TIMER,
+  PALETTES,
 } from './constants';
 
 const wrap = (v: number, max: number) => ((v % max) + max) % max;
@@ -46,8 +47,8 @@ class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = '#fff';
+  draw(ctx: CanvasRenderingContext2D, colors: Record<string, string>) {
+    ctx.fillStyle = colors.player;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -99,11 +100,11 @@ class Asteroid {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, colors: Record<string, string>) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = colors.player;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -142,18 +143,18 @@ class PowerUp {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, colors: Record<string, string>) {
     if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
     const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(Math.PI / 4);
-    ctx.strokeStyle = '#0ff';
+    ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 2;
     const r = this.radius * pulse;
     ctx.strokeRect(-r, -r, r * 2, r * 2);
     ctx.restore();
-    ctx.fillStyle = '#0ff';
+    ctx.fillStyle = colors.accent;
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -232,7 +233,7 @@ class Ship {
     return [new Bullet(ox, oy, this.angle)];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, colors: Record<string, string>) {
     if (this.dead) return;
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0)
       return;
@@ -240,7 +241,7 @@ class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = colors.player;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = 'round';
 
@@ -257,7 +258,7 @@ class Ship {
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
       ctx.lineTo(-8, 4);
-      ctx.strokeStyle = 'rgba(255, 130, 0, 0.85)';
+      ctx.strokeStyle = colors.accentDim;
       ctx.stroke();
     }
 
@@ -292,14 +293,16 @@ class Particle {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, colors: Record<string, string>) {
     const alpha = this.ttl / this.life;
-    ctx.strokeStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = colors.player;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
     ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -308,6 +311,7 @@ type GameState = 'playing' | 'dead' | 'gameover';
 export class AsteroidesEngine implements GameEngine {
   private ctx: CanvasRenderingContext2D;
   private callbacks: GameCallbacks;
+  private paletteRef: PaletteRef | null = null;
   private keys: Record<string, boolean> = {};
   private justPressed: Record<string, boolean> = {};
   private rafId = 0;
@@ -329,14 +333,29 @@ export class AsteroidesEngine implements GameEngine {
   private killsSinceSpawn = 0;
   private gameOverNotified = false;
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    callbacks: GameCallbacks,
+    extra?: {
+      previewCanvas?: HTMLCanvasElement | null;
+      palette?: PaletteRef | null;
+    },
+  ) {
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.callbacks = callbacks;
+    this.paletteRef = extra?.palette ?? null;
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     this.initGame();
     this.running = true;
     this.rafId = requestAnimationFrame(this.loop);
+  }
+
+  // Paleta activa: se lee en cada tick → cambio de skin instantáneo sin remount.
+  // Asteroides usa el formato Record; el array pertenece al patrón Tetris.
+  private getColors(): Record<string, string> {
+    const cur = this.paletteRef?.current;
+    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -509,11 +528,16 @@ export class AsteroidesEngine implements GameEngine {
     if (this.asteroids.length === 0) this.nextLevel();
   }
 
-  private drawLifeIcon(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  private drawLifeIcon(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    colors: Record<string, string>,
+  ) {
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(-Math.PI / 2);
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = colors.player;
     ctx.lineWidth = 1.2;
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -526,8 +550,11 @@ export class AsteroidesEngine implements GameEngine {
     ctx.restore();
   }
 
-  private drawHUD(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = '#fff';
+  private drawHUD(
+    ctx: CanvasRenderingContext2D,
+    colors: Record<string, string>,
+  ) {
+    ctx.fillStyle = colors.hudText;
     ctx.font = '15px monospace';
 
     ctx.textAlign = 'left';
@@ -537,11 +564,11 @@ export class AsteroidesEngine implements GameEngine {
     ctx.fillText(`NIVEL ${this.level}`, W / 2, 26);
 
     for (let i = 0; i < this.lives; i++)
-      this.drawLifeIcon(ctx, W - 16 - i * 22, 18);
+      this.drawLifeIcon(ctx, W - 16 - i * 22, 18, colors);
 
     if (this.ship.tripleShot > 0) {
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#0ff';
+      ctx.fillStyle = colors.accent;
       ctx.fillText(`3x  ${this.ship.tripleShot.toFixed(1)}s`, 14, 46);
     }
   }
@@ -550,31 +577,33 @@ export class AsteroidesEngine implements GameEngine {
     ctx: CanvasRenderingContext2D,
     title: string,
     sub: string,
+    colors: Record<string, string>,
   ) {
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = colors.text;
     ctx.font = 'bold 46px monospace';
     ctx.fillText(title, W / 2, H / 2 - 18);
     ctx.font = '18px monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillStyle = colors.textDim;
     ctx.fillText(sub, W / 2, H / 2 + 22);
   }
 
   private draw() {
     const ctx = this.ctx;
-    ctx.fillStyle = '#000';
+    const colors = this.getColors();
+    ctx.fillStyle = colors.field;
     ctx.fillRect(0, 0, W, H);
 
-    this.particles.forEach((p) => p.draw(ctx));
-    this.asteroids.forEach((a) => a.draw(ctx));
-    this.powerUps.forEach((p) => p.draw(ctx));
-    this.bullets.forEach((b) => b.draw(ctx));
-    this.ship.draw(ctx);
+    this.particles.forEach((p) => p.draw(ctx, colors));
+    this.asteroids.forEach((a) => a.draw(ctx, colors));
+    this.powerUps.forEach((p) => p.draw(ctx, colors));
+    this.bullets.forEach((b) => b.draw(ctx, colors));
+    this.ship.draw(ctx, colors);
 
-    this.drawHUD(ctx);
+    this.drawHUD(ctx, colors);
 
     if (this.state === 'gameover')
-      this.drawOverlay(ctx, 'GAME OVER', `PUNTAJE: ${this.score}`);
+      this.drawOverlay(ctx, 'GAME OVER', `PUNTAJE: ${this.score}`, colors);
   }
 
   private loop = (ts: number) => {

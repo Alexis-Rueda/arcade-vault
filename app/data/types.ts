@@ -9,6 +9,7 @@ export type Game = {
   cover: string;
   color: 'cyan' | 'magenta' | 'yellow' | 'green';
   real?: boolean;
+  skins?: boolean;
   best: number;
   plays: string;
 };

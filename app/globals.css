@@ -1397,39 +1397,40 @@ a {
   color: var(--cyan);
   text-shadow: 0 0 8px rgba(0, 245, 255, 0.6);
 }
-.tetris-skins {
-  position: absolute;
-  bottom: 18px;
-  left: 0;
-  right: 0;
+
+/* shared game skins switcher */
+.game-skins {
   display: flex;
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+  padding: 10px 0;
 }
-.tetris-skin-chip {
+.skin-select {
   font-family: var(--pixel);
-  font-size: 8px;
-  letter-spacing: 0.12em;
-  padding: 7px 12px;
-  border: 1px solid var(--ink-faint);
-  background: rgba(0, 0, 0, 0.4);
-  color: var(--ink-faint);
-  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-.tetris-skin-chip:hover {
+  padding: 4px 8px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 4px;
+  background: var(--bg-2);
   color: var(--cyan);
-  border-color: var(--cyan);
+  cursor: pointer;
+  outline: none;
 }
-.tetris-skin-chip.active {
-  color: var(--cyan);
+.skin-select:hover,
+.skin-select:focus {
   border-color: var(--cyan);
-  box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+  box-shadow: 0 0 8px rgba(0, 245, 255, 0.4);
+}
+.skin-select option {
+  background: var(--bg-2);
+  color: var(--cyan);
+}
+.hud-stat.skin .v {
+  display: flex;
+  align-items: center;
 }
 
 /* game over modal */

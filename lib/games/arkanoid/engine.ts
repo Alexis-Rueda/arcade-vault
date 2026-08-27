@@ -1,8 +1,7 @@
-import type { GameCallbacks, GameEngine } from '../types';
+import type { GameCallbacks, GameEngine, PaletteRef } from '../types';
 import {
   W,
   H,
-  MAX_DT,
   PADDLE_W,
   PADDLE_H,
   BALL_R,
@@ -14,6 +13,7 @@ import {
   ROW_COLORS,
   LEVELS,
   BALL_SPEEDS,
+  PALETTES,
 } from './constants';
 import type { RowColor } from './constants';
 import { drawWallBorder } from '../drawWallBorder';
@@ -32,6 +32,7 @@ interface Explosion {
   y: number;
   w: number;
   h: number;
+  color: RowColor;
   frames: { sx: number; sy: number; sw: number; sh: number }[];
   frameIndex: number;
   timer: number;
@@ -99,6 +100,7 @@ type GameState = 'playing' | 'lifelost' | 'gameover' | 'victory';
 export class ArkanoidEngine implements GameEngine {
   private ctx: CanvasRenderingContext2D;
   private callbacks: GameCallbacks;
+  private paletteRef: PaletteRef | null = null;
 
   private ssImg: HTMLImageElement | null = null;
   private ssLoaded = false;
@@ -125,9 +127,17 @@ export class ArkanoidEngine implements GameEngine {
   private levelButtons: { x: number; y: number; w: number; h: number }[] = [];
   private selectedLevel = 0;
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    callbacks: GameCallbacks,
+    extra?: {
+      previewCanvas?: HTMLCanvasElement | null;
+      palette?: PaletteRef | null;
+    },
+  ) {
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.callbacks = callbacks;
+    this.paletteRef = extra?.palette ?? null;
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -136,6 +146,13 @@ export class ArkanoidEngine implements GameEngine {
     canvas.addEventListener('contextmenu', this.onContextMenu);
 
     this.loadSpritesheet();
+  }
+
+  // Paleta activa: se lee en cada tick → cambio de skin instantáneo sin remount.
+  // Arkanoid usa el formato Record; el array pertenece al patrón Tetris.
+  private getColors(): Record<string, string> {
+    const cur = this.paletteRef?.current;
+    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
   }
 
   private loadSpritesheet() {
@@ -360,6 +377,7 @@ export class ArkanoidEngine implements GameEngine {
           y: b.y,
           w: BLOCK_W,
           h: BLOCK_H,
+          color: b.color,
           frames: EXPLOSION_FRAMES[b.color],
           frameIndex: 0,
           timer: 0,
@@ -422,25 +440,128 @@ export class ArkanoidEngine implements GameEngine {
 
   private draw() {
     const ctx = this.ctx;
-    ctx.fillStyle = '#000';
+    const colors = this.getColors();
+    ctx.fillStyle = colors.field;
     ctx.fillRect(0, 0, W, H);
 
     drawWallBorder(ctx, W, H);
 
     if (this.screen === 'title') {
-      this.drawTitle();
+      this.drawTitle(colors);
       return;
     }
 
-    this.drawSprite(
-      'paddle',
-      this.paddle.x,
-      this.paddle.y,
-      this.paddle.w,
-      this.paddle.h,
-    );
+    this.drawPaddle(colors);
+    this.drawBall(colors);
+    this.drawBlocks(colors);
+    this.drawExplosions(colors);
 
-    if (this.ssLoaded) {
+    ctx.fillStyle = colors.hud;
+    ctx.fillRect(0, 0, W, 32);
+    ctx.fillStyle = colors.hudText;
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`PUNTOS: ${this.score}`, 10, 22);
+    ctx.textAlign = 'right';
+    ctx.fillText(`VIDAS: ${'♥'.repeat(this.lives)}`, W - 10, 22);
+
+    if (this.screen === 'transition') {
+      ctx.fillStyle = colors.overlay;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = colors.accent;
+      ctx.font = '48px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`¡NIVEL ${this.levelIndex + 1}!`, W / 2, H / 2 - 20);
+      ctx.fillStyle = colors.text;
+      ctx.font = '18px monospace';
+      ctx.fillText(
+        `Nivel ${this.levelIndex + 1} - ${LEVELS[this.levelIndex].name}`,
+        W / 2,
+        H / 2 + 20,
+      );
+      return;
+    }
+
+    if (this.paused) {
+      ctx.fillStyle = colors.overlay;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = colors.text;
+      ctx.font = '36px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSA', W / 2, 60);
+      return;
+    }
+
+    if (this.state === 'lifelost') {
+      ctx.fillStyle = colors.overlay;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = colors.text;
+      ctx.font = '24px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        `VIDAS RESTANTES: ${this.lives} — PRESIONA ESPACIO`,
+        W / 2,
+        H / 2,
+      );
+    }
+
+    if (this.state === 'gameover') {
+      ctx.fillStyle = colors.overlay;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = colors.gameOver;
+      ctx.font = '48px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
+      ctx.fillStyle = colors.text;
+      ctx.font = '18px monospace';
+      ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
+    }
+
+    if (this.state === 'victory') {
+      ctx.fillStyle = colors.overlay;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = colors.victory;
+      ctx.font = '48px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('¡GANASTE!', W / 2, H / 2 - 20);
+      ctx.fillStyle = colors.text;
+      ctx.font = '18px monospace';
+      ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
+    }
+  }
+
+  // En clasico se conserva el spritesheet original (sin cambio visual);
+  // retro/neon dibujan figuras planas con brillo de alto contraste.
+  private isClassic(colors: Record<string, string>): boolean {
+    return colors.skinId === 'clasico';
+  }
+
+  private drawPaddle(colors: Record<string, string>) {
+    const ctx = this.ctx;
+    if (this.ssLoaded && this.isClassic(colors)) {
+      this.drawSprite(
+        'paddle',
+        this.paddle.x,
+        this.paddle.y,
+        this.paddle.w,
+        this.paddle.h,
+      );
+      return;
+    }
+    ctx.save();
+    ctx.fillStyle = colors.paddle;
+    ctx.shadowColor = colors.paddle;
+    ctx.shadowBlur = 14;
+    ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.w, 4);
+    ctx.restore();
+  }
+
+  private drawBall(colors: Record<string, string>) {
+    const ctx = this.ctx;
+    if (this.ssLoaded && this.isClassic(colors)) {
       const sp = SPRITES.ball;
       ctx.drawImage(
         this.ssImg!,
@@ -453,102 +574,59 @@ export class ArkanoidEngine implements GameEngine {
         this.ball.r * 2,
         this.ball.r * 2,
       );
-    } else {
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI * 2);
-      ctx.fill();
+      return;
     }
+    ctx.save();
+    ctx.fillStyle = colors.ball;
+    ctx.shadowColor = colors.ball;
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 
+  private drawBlocks(colors: Record<string, string>) {
+    const ctx = this.ctx;
     for (const b of this.blocks) {
       if (!b.alive) continue;
-      this.drawSprite('block_' + b.color, b.x, b.y, b.w, b.h);
-    }
-
-    for (const e of this.explosions) {
-      if (this.ssLoaded && e.frames[e.frameIndex]) {
-        const f = e.frames[e.frameIndex];
-        ctx.drawImage(this.ssImg!, f.sx, f.sy, f.sw, f.sh, e.x, e.y, e.w, e.h);
+      if (this.ssLoaded && this.isClassic(colors)) {
+        this.drawSprite('block_' + b.color, b.x, b.y, b.w, b.h);
+        continue;
       }
-    }
-
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, W, 32);
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`PUNTOS: ${this.score}`, 10, 22);
-    ctx.textAlign = 'right';
-    ctx.fillText(`VIDAS: ${'♥'.repeat(this.lives)}`, W - 10, 22);
-
-    if (this.screen === 'transition') {
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#ff0';
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(`¡NIVEL ${this.levelIndex + 1}!`, W / 2, H / 2 - 20);
-      ctx.fillStyle = '#fff';
-      ctx.font = '18px monospace';
-      ctx.fillText(
-        `Nivel ${this.levelIndex + 1} - ${LEVELS[this.levelIndex].name}`,
-        W / 2,
-        H / 2 + 20,
-      );
-      return;
-    }
-
-    if (this.paused) {
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fff';
-      ctx.font = '36px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('PAUSA', W / 2, 60);
-      return;
-    }
-
-    if (this.state === 'lifelost') {
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fff';
-      ctx.font = '24px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        `VIDAS RESTANTES: ${this.lives} — PRESIONA ESPACIO`,
-        W / 2,
-        H / 2,
-      );
-    }
-
-    if (this.state === 'gameover') {
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#f44';
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
-      ctx.fillStyle = '#fff';
-      ctx.font = '18px monospace';
-      ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
-    }
-
-    if (this.state === 'victory') {
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#4f4';
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('¡GANASTE!', W / 2, H / 2 - 20);
-      ctx.fillStyle = '#fff';
-      ctx.font = '18px monospace';
-      ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
+      const fill = colors['block' + (ROW_COLORS.indexOf(b.color) + 1)];
+      ctx.save();
+      ctx.fillStyle = fill;
+      ctx.shadowColor = fill;
+      ctx.shadowBlur = 8;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.fillRect(b.x, b.y, b.w, 3);
+      ctx.restore();
     }
   }
 
-  private drawTitle() {
+  private drawExplosions(colors: Record<string, string>) {
     const ctx = this.ctx;
-    ctx.fillStyle = '#fff';
+    for (const e of this.explosions) {
+      if (this.isClassic(colors) && this.ssLoaded && e.frames[e.frameIndex]) {
+        const f = e.frames[e.frameIndex];
+        ctx.drawImage(this.ssImg!, f.sx, f.sy, f.sw, f.sh, e.x, e.y, e.w, e.h);
+        continue;
+      }
+      const fill = colors['block' + (ROW_COLORS.indexOf(e.color) + 1)];
+      ctx.save();
+      ctx.globalAlpha = 1 - e.timer / 150;
+      ctx.fillStyle = fill;
+      ctx.fillRect(e.x, e.y, e.w, e.h);
+      ctx.restore();
+    }
+  }
+
+  private drawTitle(colors: Record<string, string>) {
+    const ctx = this.ctx;
+    ctx.fillStyle = colors.text;
     ctx.font = '48px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('ARKANOID', W / 2, 80);
@@ -561,21 +639,22 @@ export class ArkanoidEngine implements GameEngine {
     for (let i = 0; i < LEVELS.length; i++) {
       const y = startY + i * (itemH + gap);
       this.levelButtons.push({ x: 300, y, w: 200, h: itemH });
-      ctx.fillStyle = i === this.selectedLevel ? '#2980b9' : '#3498db';
+      ctx.fillStyle =
+        i === this.selectedLevel ? colors.accentSelected : colors.accentDim;
       ctx.fillRect(300, y, 200, itemH);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = colors.text;
       ctx.font = '16px monospace';
       ctx.textAlign = 'center';
       ctx.fillText(`Nivel ${i + 1} - ${LEVELS[i].name}`, W / 2, y + 28);
     }
     ctx.font = '14px monospace';
-    ctx.fillStyle = '#888';
+    ctx.fillStyle = colors.textDim;
     ctx.fillText('Haz clic en un nivel para comenzar', W / 2, 560);
   }
 
   private drawSprite(name: string, x: number, y: number, w: number, h: number) {
     if (!this.ssLoaded) {
-      this.ctx.fillStyle = '#888';
+      this.ctx.fillStyle = this.getColors().textDim;
       this.ctx.fillRect(x, y, w, h);
       return;
     }
@@ -603,8 +682,6 @@ export class ArkanoidEngine implements GameEngine {
 
   private loop = (ts: number) => {
     if (!this.running) return;
-    const dt =
-      this.lastTime === null ? 0 : Math.min(ts - this.lastTime, MAX_DT);
     this.lastTime = ts;
     if (!this.paused) {
       this.update();

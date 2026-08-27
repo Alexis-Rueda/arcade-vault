@@ -108,3 +108,79 @@ export const LEVELS: LevelDef[] = [
 ];
 
 export const BALL_SPEEDS = [3, 3.3, 3.63, 3.99, 4.39];
+
+import type { SkinId } from '../skins';
+
+/**
+ * Paletas por skin: claves semánticas que centralizan los colores de draw().
+ * clasico replica los colores actuales del juego (spritesheet, sin cambio visual).
+ * Las claves block1..block6 corresponden a las filas 1..6 (ROW_COLORS).
+ */
+export const PALETTES: Record<SkinId, Record<string, string>> = {
+  clasico: {
+    skinId: 'clasico',
+    field: '#000',
+    overlay: 'rgba(0,0,0,0.7)',
+    hud: 'rgba(0,0,0,0.5)',
+    hudText: '#fff',
+    text: '#fff',
+    textDim: '#888',
+    accent: '#ff0',
+    accentDim: '#3498db',
+    accentSelected: '#2980b9',
+    ball: '#fff',
+    paddle: '#fff',
+    block1: '#ff0000',
+    block2: '#ffff00',
+    block3: '#00ffff',
+    block4: '#ff00ff',
+    block5: '#ff69b4',
+    block6: '#00ff00',
+    gameOver: '#f44',
+    victory: '#4f4',
+  },
+  retro: {
+    skinId: 'retro',
+    field: '#05010d',
+    overlay: 'rgba(0,0,0,0.75)',
+    hud: 'rgba(0,0,0,0.5)',
+    hudText: '#00ff41',
+    text: '#00ff41',
+    textDim: 'rgba(0,255,65,0.7)',
+    accent: '#00ffff',
+    accentDim: '#00aa55',
+    accentSelected: '#ffb000',
+    ball: '#00ff41',
+    paddle: '#00ff41',
+    block1: '#ff3333',
+    block2: '#ffb000',
+    block3: '#00ffff',
+    block4: '#ff7b00',
+    block5: '#39ff14',
+    block6: '#00ff41',
+    gameOver: '#ff3333',
+    victory: '#00ff41',
+  },
+  neon: {
+    skinId: 'neon',
+    field: '#05010f',
+    overlay: 'rgba(0,0,0,0.78)',
+    hud: 'rgba(0,0,0,0.55)',
+    hudText: '#00fff0',
+    text: '#00fff0',
+    textDim: 'rgba(0,245,255,0.7)',
+    accent: '#ff00e5',
+    accentDim: '#5b21b6',
+    accentSelected: '#ff2fd6',
+    ball: '#00fff0',
+    paddle: '#ff00e5',
+    block1: '#ff00e5',
+    block2: '#ff9f1c',
+    block3: '#00fff0',
+    block4: '#7df9ff',
+    block5: '#ff2fd6',
+    block6: '#39ff14',
+    gameOver: '#ff2f4f',
+    victory: '#39ff14',
+  },
+};
