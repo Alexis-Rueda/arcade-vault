@@ -1,4 +1,4 @@
-import type { GameCallbacks, GameEngine } from '../types';
+import type { GameCallbacks, GameEngine, PaletteRef } from '../types';
 import {
   W,
   H,
@@ -10,6 +10,7 @@ import {
   MIN_TICK,
   SPEED_INTERVAL,
   POINTS_PER_FRUIT,
+  PALETTES,
 } from './constants';
 import { drawWallBorder } from '../drawWallBorder';
 
@@ -60,9 +61,19 @@ const DIR_VECTOR: Record<Direction, Point> = {
   right: { x: 1, y: 0 },
 };
 
+// Escala un color hex hacia negro por un factor [0,1] (usado en el degradado del cuerpo)
+function shade(hex: string, factor: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.floor(((n >> 16) & 255) * factor);
+  const g = Math.floor(((n >> 8) & 255) * factor);
+  const b = Math.floor((n & 255) * factor);
+  return `rgb(${r},${g},${b})`;
+}
+
 export class SnakeEngine implements GameEngine {
   private ctx: CanvasRenderingContext2D;
   private callbacks: GameCallbacks;
+  private paletteRef: PaletteRef | null = null;
 
   private ssImg: HTMLImageElement | null = null;
   private ssLoaded = false;
@@ -89,14 +100,29 @@ export class SnakeEngine implements GameEngine {
 
   private keys: Record<string, boolean> = {};
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    callbacks: GameCallbacks,
+    extra?: {
+      previewCanvas?: HTMLCanvasElement | null;
+      palette?: PaletteRef | null;
+    },
+  ) {
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.callbacks = callbacks;
+    this.paletteRef = extra?.palette ?? null;
 
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
 
     this.loadSpritesheet();
+  }
+
+  // Paleta activa: se lee en cada tick → cambio de skin instantáneo sin remount.
+  // Snake usa el formato Record; el array pertenece al patrón Tetris.
+  private getColors(): Record<string, string> {
+    const cur = this.paletteRef?.current;
+    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
   }
 
   private loadSpritesheet() {
@@ -244,11 +270,12 @@ export class SnakeEngine implements GameEngine {
 
   private draw() {
     const ctx = this.ctx;
-    ctx.fillStyle = '#000';
+    const colors = this.getColors();
+    ctx.fillStyle = colors.field;
     ctx.fillRect(0, 0, W, H);
 
     // Dibujar grilla sutil
-    ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    ctx.strokeStyle = colors.grid;
     ctx.lineWidth = 1;
     for (let x = 0; x <= COLS; x++) {
       ctx.beginPath();
@@ -282,7 +309,7 @@ export class SnakeEngine implements GameEngine {
       );
     } else {
       // Fallback: círculo rojo
-      ctx.fillStyle = '#f44';
+      ctx.fillStyle = colors.gameOver;
       ctx.beginPath();
       ctx.arc(
         this.fruit.x * CELL + CELL / 2,
@@ -299,22 +326,23 @@ export class SnakeEngine implements GameEngine {
       const seg = this.snake[i];
       const isHead = i === 0;
       const intensity = isHead ? 1 : 0.6 + 0.4 * (1 - i / this.snake.length);
-      const g = Math.floor(200 * intensity);
-      ctx.fillStyle = isHead ? `rgb(0,${g},0)` : `rgb(0,${g},40)`;
+      ctx.fillStyle = isHead
+        ? colors.player
+        : shade(colors.playerBody, intensity);
       ctx.fillRect(seg.x * CELL + 1, seg.y * CELL + 1, CELL - 2, CELL - 2);
 
-      // Borde neon en la cabeza
+      // Borde de brillo en la cabeza
       if (isHead) {
-        ctx.strokeStyle = '#0f0';
+        ctx.strokeStyle = colors.player;
         ctx.lineWidth = 2;
         ctx.strokeRect(seg.x * CELL + 1, seg.y * CELL + 1, CELL - 2, CELL - 2);
       }
     }
 
     // HUD en canvas
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillStyle = colors.hudBg;
     ctx.fillRect(0, 0, W, 32);
-    ctx.fillStyle = '#0f0';
+    ctx.fillStyle = colors.hudText;
     ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.fillText(`SCORE: ${this.score}`, 10, 22);
@@ -325,7 +353,7 @@ export class SnakeEngine implements GameEngine {
     if (this.paused) {
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#0f0';
+      ctx.fillStyle = colors.pause;
       ctx.font = '36px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('EN PAUSA', W / 2, H / 2);
@@ -335,11 +363,11 @@ export class SnakeEngine implements GameEngine {
     if (this.state === 'gameover') {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#f44';
+      ctx.fillStyle = colors.gameOver;
       ctx.font = '48px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = colors.text;
       ctx.font = '18px monospace';
       ctx.fillText(`PUNTUACIÓN: ${this.score}`, W / 2, H / 2 + 20);
     }

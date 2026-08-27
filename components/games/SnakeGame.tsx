@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { GameCanvas } from './GameCanvas';
 import { createSnakeGame } from '@/lib/games/snake';
-import type { GameHandle } from '@/lib/games/types';
+import { PALETTES } from '@/lib/games/snake/constants';
+import { useSkin } from '@/lib/hooks/useSkin';
 import type { RealGameWrapperProps } from '@/lib/games/registry';
 
 export function SnakeGame({
@@ -13,6 +15,13 @@ export function SnakeGame({
   onOver,
   handleRef,
 }: RealGameWrapperProps) {
+  const { skin } = useSkin();
+  const paletteRef = useRef<Record<string, string>>(PALETTES.clasico);
+
+  useEffect(() => {
+    paletteRef.current = PALETTES[skin];
+  }, [skin]);
+
   return (
     <div className="game-arena">
       <GameCanvas
@@ -23,6 +32,7 @@ export function SnakeGame({
         className="game-canvas"
         width={800}
         height={800}
+        palette={paletteRef}
       />
     </div>
   );

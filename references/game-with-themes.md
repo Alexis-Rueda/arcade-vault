@@ -8,8 +8,8 @@
 | ---------- | ---------- | ----------------------- | ------- | ---------- |
 | tetris     | Tetris     | retro neon pastel pixel | retro   | 2026-08-27 |
 | asteroides | Asteroides | clasico retro neon      | clasico | 2026-08-27 |
-| arkanoid   | Arkanoid   | —                       | —       | —          |
-| snake      | Snake      | —                       | —       | —          |
+| arkanoid   | Arkanoid   | clasico retro neon      | clasico | 2026-08-27 |
+| snake      | Snake      | clasico retro neon      | clasico | 2026-08-27 |
 
 ## Regla
 
