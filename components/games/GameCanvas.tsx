@@ -7,6 +7,7 @@ import type {
   GameEngineFactory,
   GameHandle,
 } from '@/lib/games/types';
+import type { PaletteRef } from '@/lib/games/types';
 
 type Props = {
   factory: GameEngineFactory;
@@ -17,7 +18,7 @@ type Props = {
   width?: number;
   height?: number;
   preview?: { width: number; height: number; className?: string };
-  palette?: { current: (string | null)[] } | null;
+  palette?: PaletteRef | null;
 };
 
 export function GameCanvas({

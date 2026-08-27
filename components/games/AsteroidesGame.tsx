@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { GameCanvas } from './GameCanvas';
 import { createAsteroidesGame } from '@/lib/games/asteroides';
+import { PALETTES } from '@/lib/games/asteroides/constants';
+import { useSkin } from '@/lib/hooks/useSkin';
 import type { GameHandle } from '@/lib/games/types';
 
 type Props = {
@@ -21,6 +24,13 @@ export function AsteroidesGame({
   onOver,
   handleRef,
 }: Props) {
+  const { skin } = useSkin();
+  const paletteRef = useRef<Record<string, string>>(PALETTES.clasico);
+
+  useEffect(() => {
+    paletteRef.current = PALETTES[skin];
+  }, [skin]);
+
   return (
     <div className="game-arena">
       <GameCanvas
@@ -29,6 +39,7 @@ export function AsteroidesGame({
         paused={paused}
         handleRef={handleRef}
         className="game-canvas"
+        palette={paletteRef}
       />
     </div>
   );

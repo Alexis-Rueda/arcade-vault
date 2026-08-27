@@ -13,12 +13,18 @@ export interface GameEngine {
   endGame(): void; // fuerza game over → dispara onGameOver(score)
 }
 
+export type GamePalette = Record<string, string>;
+
+export type PaletteRef = {
+  current: (string | null)[] | GamePalette | null;
+};
+
 export type GameEngineFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
   extra?: {
     previewCanvas?: HTMLCanvasElement | null;
-    palette?: { current: (string | null)[] } | null;
+    palette?: PaletteRef | null;
   },
 ) => GameEngine;
 

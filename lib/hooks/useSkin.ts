@@ -1,48 +1,102 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { SkinId } from '@/lib/games/skins';
-import { SKIN_SET } from '@/lib/games/skins';
+import { GLOBAL_SKIN_CONFIG, type SkinConfig } from '@/lib/games/skins';
 
-const STORAGE_KEY = 'av-skin';
 const DEFAULT_SKIN: SkinId = 'clasico';
 
-function loadSkin(): SkinId {
-  if (typeof window === 'undefined') return DEFAULT_SKIN;
+type Store = {
+  skin: string;
+  listeners: Set<() => void>;
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => string;
+  set: (id: string) => void;
+};
+
+const stores = new Map<string, Store>();
+
+function getStore(key: string): Store {
+  let store = stores.get(key);
+  if (store) return store;
+
+  const listeners = new Set<() => void>();
+  let value =
+    typeof window === 'undefined'
+      ? DEFAULT_SKIN
+      : readStorage(key, DEFAULT_SKIN);
+
+  store = {
+    skin: value,
+    listeners,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    getSnapshot: () => value,
+    set(id) {
+      value = id;
+      try {
+        localStorage.setItem(key, id);
+      } catch {
+        /* noop */
+      }
+      listeners.forEach((l) => l());
+    },
+  };
+  stores.set(key, store);
+  return store;
+}
+
+function readStorage(key: string, fallback: string): string {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw && SKIN_SET.includes(raw as SkinId)) return raw as SkinId;
+    const raw = localStorage.getItem(key);
+    if (raw) return raw;
   } catch {
     /* noop */
   }
-  return DEFAULT_SKIN;
+  return fallback;
 }
 
-function saveSkin(id: SkinId) {
-  try {
-    localStorage.setItem(STORAGE_KEY, id);
-  } catch {
-    /* noop */
-  }
-}
-
-/**
- * Global skin state — persisted in localStorage.
- * Every game wrapper subscribes to this; changing the skin updates all consumers.
- */
-export function useSkin() {
-  const [skin, setSkinRaw] = useState<SkinId>(loadSkin);
-  const ref = useRef<SkinId>(skin);
+function useSkinStore(config: SkinConfig) {
+  const store = getStore(config.storageKey);
+  const skin = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    () => config.defaultSkin,
+  );
+  const ref = useRef(skin);
 
   useEffect(() => {
     ref.current = skin;
   }, [skin]);
 
-  const setSkin = useCallback((id: SkinId) => {
-    setSkinRaw(id);
-    ref.current = id;
-    saveSkin(id);
-  }, []);
+  const setSkin = useCallback(
+    (id: string) => {
+      store.set(id);
+      ref.current = id;
+    },
+    [store],
+  );
 
   return { skin, setSkin, ref };
+}
+
+/**
+ * Global skin state — persisted in localStorage and shared across
+ * every useSkin instance via a module-level store.
+ */
+export function useSkin() {
+  return useSkinStore(GLOBAL_SKIN_CONFIG) as {
+    skin: SkinId;
+    setSkin: (id: SkinId) => void;
+    ref: { current: SkinId };
+  };
+}
+
+/** Skin state for a custom skin set (e.g. Tetris with its own palettes). */
+export function useSkinWith(config: SkinConfig) {
+  return useSkinStore(config);
 }

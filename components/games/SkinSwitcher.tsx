@@ -1,25 +1,30 @@
 'use client';
 
-import type { SkinId } from '@/lib/games/skins';
-import { SKIN_SET, SKIN_LABELS } from '@/lib/games/skins';
+import { GLOBAL_SKIN_CONFIG, type SkinOption } from '@/lib/games/skins';
 
 type Props = {
-  current: SkinId;
-  onChange: (id: SkinId) => void;
+  current: string;
+  onChange: (id: string) => void;
+  options?: SkinOption[];
 };
 
-export function SkinSwitcher({ current, onChange }: Props) {
+export function SkinSwitcher({
+  current,
+  onChange,
+  options = GLOBAL_SKIN_CONFIG.options,
+}: Props) {
   return (
-    <div className="game-skins">
-      {SKIN_SET.map((id) => (
-        <button
-          key={id}
-          className={`game-skin-chip${current === id ? ' active' : ''}`}
-          onClick={() => onChange(id)}
-        >
-          {SKIN_LABELS[id]}
-        </button>
+    <select
+      className="skin-select"
+      value={current}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label="Seleccionar skin"
+    >
+      {options.map((o) => (
+        <option key={o.id} value={o.id}>
+          {o.label}
+        </option>
       ))}
-    </div>
+    </select>
   );
 }

@@ -7,6 +7,9 @@ import { useUser } from '@/lib/hooks/useUser';
 import { useScores } from '@/lib/hooks/useScores';
 import { insertScore } from '@/lib/supabase/scores';
 import { getRealGame } from '@/lib/games/registry';
+import { SkinSwitcher } from './games/SkinSwitcher';
+import { useSkinWith } from '@/lib/hooks/useSkin';
+import { SKINS_BY_GAME, GLOBAL_SKIN_CONFIG } from '@/lib/games/skins';
 import type { Game } from '@/app/data/types';
 import type { GameHandle } from '@/lib/games/types';
 
@@ -25,6 +28,8 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [saveError, setSaveError] = useState(false);
   const [engineLevel, setEngineLevel] = useState(1);
   const gameRef = useRef<GameHandle | null>(null);
+  const skinConfig = game.skins ? SKINS_BY_GAME[game.id] : null;
+  const { skin, setSkin } = useSkinWith(skinConfig ?? GLOBAL_SKIN_CONFIG);
 
   const realGame = useMemo(() => getRealGame(game.id), [game.id]);
 
@@ -94,6 +99,18 @@ export function PlayerScreen({ game }: { game: Game }) {
             <div className="l">Nivel</div>
             <div className="v">{String(level).padStart(2, '0')}</div>
           </div>
+          {game.skins && skinConfig && (
+            <div className="hud-stat skin">
+              <div className="l">Skin</div>
+              <div className="v">
+                <SkinSwitcher
+                  current={skin}
+                  onChange={setSkin}
+                  options={skinConfig.options}
+                />
+              </div>
+            </div>
+          )}
         </div>
         <div className="hud-actions">
           <button className="btn yellow" onClick={() => setPaused((p) => !p)}>

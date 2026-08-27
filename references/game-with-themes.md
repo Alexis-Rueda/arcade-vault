@@ -7,7 +7,7 @@
 | ID         | Juego      | Skins                   | Default | Fecha      |
 | ---------- | ---------- | ----------------------- | ------- | ---------- |
 | tetris     | Tetris     | retro neon pastel pixel | retro   | 2026-08-27 |
-| asteroides | Asteroides | —                       | —       | —          |
+| asteroides | Asteroides | clasico retro neon      | clasico | 2026-08-27 |
 | arkanoid   | Arkanoid   | —                       | —       | —          |
 | snake      | Snake      | —                       | —       | —          |
 

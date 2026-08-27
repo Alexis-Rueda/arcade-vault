@@ -1,9 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameCanvas } from './GameCanvas';
 import { createTetrisGame } from '@/lib/games/tetris';
 import { PALETTES } from '@/lib/games/tetris/constants';
+import { useSkinWith } from '@/lib/hooks/useSkin';
+import { SKINS_BY_GAME } from '@/lib/games/skins';
 import type { GameHandle } from '@/lib/games/types';
 
 type Props = {
@@ -16,15 +18,6 @@ type Props = {
   handleRef: { current: GameHandle | null };
 };
 
-const SKINS = [
-  { id: 'retro', label: 'RETRO' },
-  { id: 'neon', label: 'NEON' },
-  { id: 'pastel', label: 'PASTEL' },
-  { id: 'pixel', label: 'PIXEL ART' },
-] as const;
-
-type SkinId = (typeof SKINS)[number]['id'];
-
 export function TetrisGame({
   paused,
   onScore,
@@ -36,13 +29,12 @@ export function TetrisGame({
 }: Props) {
   const [lines, setLines] = useState(0);
   const [score, setScore] = useState(0);
-  const [skin, setSkin] = useState<SkinId>('retro');
-  const paletteRef = useRef<(string | null)[]>(PALETTES.retro);
+  const { skin } = useSkinWith(SKINS_BY_GAME.tetris);
+  const paletteRef = useRef<(string | null)[]>(PALETTES[skin]);
 
-  const selectSkin = (id: SkinId) => {
-    paletteRef.current = PALETTES[id];
-    setSkin(id);
-  };
+  useEffect(() => {
+    paletteRef.current = PALETTES[skin];
+  }, [skin]);
 
   return (
     <div className="tetris-stage">
@@ -82,17 +74,6 @@ export function TetrisGame({
           <div className="tetris-value">{score.toLocaleString('es-ES')}</div>
         </div>
       </aside>
-      <div className="tetris-skins">
-        {SKINS.map((s) => (
-          <button
-            key={s.id}
-            className={'tetris-skin-chip' + (skin === s.id ? ' active' : '')}
-            onClick={() => selectSkin(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

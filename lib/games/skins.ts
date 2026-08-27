@@ -15,6 +15,38 @@ export const SKIN_LABELS: Record<SkinId, string> = {
   neon: 'NEON',
 };
 
+export type SkinOption = { id: string; label: string };
+
+export type SkinConfig = {
+  storageKey: string;
+  defaultSkin: string;
+  options: SkinOption[];
+};
+
+export const GLOBAL_SKIN_CONFIG: SkinConfig = {
+  storageKey: 'av-skin',
+  defaultSkin: 'clasico',
+  options: SKIN_SET.map((id) => ({ id, label: SKIN_LABELS[id] })),
+};
+
+/**
+ * Skin config per game (keyed by game id). Only games listed here show
+ * the skin selector in the PlayerScreen HUD.
+ */
+export const SKINS_BY_GAME: Record<string, SkinConfig> = {
+  asteroides: GLOBAL_SKIN_CONFIG,
+  tetris: {
+    storageKey: 'av-skin-tetris',
+    defaultSkin: 'retro',
+    options: [
+      { id: 'retro', label: 'RETRO' },
+      { id: 'neon', label: 'NEON' },
+      { id: 'pastel', label: 'PASTEL' },
+      { id: 'pixel', label: 'PIXEL ART' },
+    ],
+  },
+};
+
 /**
  * Semantic color keys used across all games.
  * Each game defines its own PALETTES: Record<SkinId, GamePalette>.
