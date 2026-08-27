@@ -18,6 +18,13 @@ Available in `.agents/skills/`:
 - **`/spec-impl`** — implement specs in `Approved` state. Creates branch `spec-NN-slug`. Works step by step with pauses to review diffs.
 - **`/add-game`** — design the spec for a new game (ported from `references/started-games/` or from scratch) with its Supabase leaderboard. Only generates the spec; implement with `/spec-impl`.
 
+## Agents
+
+Project-scoped opencode agents in `.opencode/agents/` (invoke with `@<name>`):
+
+- **`@game-jam`** — given a theme/concept, derives a `game-id` and writes **≥2 distinct design variants** of the same game as specs in `specs/game-jam/<game-id>/` (local numbering `01-`, `02-`). States specs `Draft`; writes only `.md`, never code. Lives at `.opencode/agents/game-jam.md`.
+- **`@game-planner`** — plans and decides which arcade game to build next in Arcade Vault. Inventories the catalog and available references, proposes ranked candidates by criteria (genre gap, portability, canvas-fit, leaderboard engagement, visual novelty) and keeps a persistent memory of suggestions in `references/game-suggestions-todo.md` to avoid repeats. Only recommends and records — never implements or writes specs. Lives at `.opencode/agents/game-planner.md`.
+
 ## Implemented Games
 
 Full table in `references/implemented-games.md`.
