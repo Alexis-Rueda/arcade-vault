@@ -10,6 +10,8 @@ interface ControlMap {
   BTN_B: string;
 }
 
+// BTN_A/B emiten la tecla que el engine ya reconoce (funcionalidad táctil).
+// z/j/x/k activan el resplandor visual del gamepad MK-II (ver VirtualGamepad).
 export const TOUCH_CONTROLS: Record<string, ControlMap> = {
   asteroides: {
     UP: 'w',

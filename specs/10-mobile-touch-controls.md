@@ -1,6 +1,6 @@
 # SPEC 10 — Mobile Touch Controls
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, 07, 08, 09 (Real Games)
 > **Date:** 2026-09-01
 > **Objective:** Implementar un sistema de controles táctiles y layout adaptativo para dispositivos móviles que permita jugar todos los juegos reales mediante un gamepad virtual.
@@ -75,35 +75,35 @@ Componente que encapsula el `GameCanvas`, el `VirtualGamepad` y el footer de acc
 
 ## Implementation plan
 
-1. **Definir Mapeos de Control** — Crear `lib/games/controls-mapping.ts` con la configuración de teclas para cada juego real. _Verificable:_ `tsc --noEmit`.
-2. **Crear `components/games/VirtualGamepad.tsx`** — Implementar el panel visual con D-pad y 2 botones. Debe disparar eventos de teclado sintéticos (`KeyboardEvent`) o callbacks que el engine pueda escuchar. _Verificable:_ Componente renderiza correctamente en modo dev; clics disparan logs de teclas.
+1. **Definir Mapeos de Control** — Crear `lib/games/controls-mapping.ts` con la configuración de teclas para cada juego real. _Verificable:_ `tsc --noEmit`. [Completed]
+2. **Crear `components/games/VirtualGamepad.tsx`** — Implementar el panel visual con D-pad y 2 botones. Debe disparar eventos de teclado sintéticos (`KeyboardEvent`) o callbacks que el engine pueda escuchar. _Verificable:_ Componente renderiza correctamente en modo dev; clics disparan logs de teclas. [Completed]
 3. **Crear `components/games/MobileGameLayout.tsx`** — Implementar el contenedor con Flexbox (`flex-col`).
    - Lógica de detección: `window.innerWidth < 768` (md) y `navigator.maxTouchPoints > 0`.
    - Organización: `Canvas` $\rightarrow$ `VirtualGamepad` $\rightarrow$ `Footer (Pause/SkinSwitcher)`.
    - Ocultar HUD de React mediante clases condicionales.
-     _Verificable:_ El layout cambia dinámicamente al redimensionar la ventana o emular dispositivo móvil.
-4. **Integrar Layout en `PlayerScreen`** — Envolver el `GameCanvas` con `MobileGameLayout` para que se active automáticamente en móviles. _Verificable:_ `/player/[id]` muestra la interfaz táctil en móvil.
-5. **Adaptar Tamaño del Canvas** — Ajustar el CSS del `GameCanvas` para que sea responsivo y no desborde la pantalla al añadir el gamepad abajo. _Verificable:_ El canvas es visible y centrado sin scroll vertical innecesario.
+     _Verificable:_ El layout cambia dinámicamente al redimensionar la ventana o emular dispositivo móvil. [Completed]
+4. **Integrar Layout en `PlayerScreen`** — Envolver el `GameCanvas` con `MobileGameLayout` para que se active automáticamente en móviles. _Verificable:_ `/player/[id]` muestra la interfaz táctil en móvil. [Completed]
+5. **Adaptar Tamaño del Canvas** — Ajustar el CSS del `GameCanvas` para que sea responsivo y no desborde la pantalla al añadir el gamepad abajo. _Verificable:_ El canvas es visible y centrado sin scroll vertical innecesario. [Completed]
 6. **Verificación End-to-End** — Probar en dispositivo móvil real o emulador:
    - Navegación fluida.
    - Control total de los 4 juegos reales vía gamepad.
    - Visibilidad correcta de botones de Pausa y Temas.
    - HUD de React oculto.
-   - Regresiones: teclado sigue funcionando en escritorio.
+   - Regresiones: teclado sigue funcionando en escritorio. [Completed]
 
 ---
 
 ## Acceptance criteria
 
-- [ ] `lib/games/controls-mapping.ts` existe y contiene mapeos válidos para Asteroides, Tetris, Arkanoid y Snake.
-- [ ] El `VirtualGamepad` es visible solo en dispositivos con `maxTouchPoints > 0` y pantallas `< md` (Tailwind).
-- [ ] El layout en móvil es estrictamente vertical: `Canvas` $\rightarrow$ `Gamepad` $\rightarrow$ `Footer (Pause/Skins)`.
-- [ ] El HUD de React (puntuación, vidas, etc.) está completamente oculto en modo móvil.
-- [ ] El canvas se ajusta dinámicamente para evitar el desbordamiento vertical en pantallas pequeñas.
-- [ ] Presionar las flechas y botones del Gamepad ejecuta la acción correcta en los 4 juegos reales.
-- [ ] El teclado físico sigue funcionando correctamente en modo escritorio y modo híbrido.
-- [ ] El estilo visual del gamepad es coherente con la estética neon/retro del resto de la plataforma.
-- [ ] `tsc --noEmit` pasa sin errores.
+- [x] `lib/games/controls-mapping.ts` existe y contiene mapeos válidos para Asteroides, Tetris, Arkanoid y Snake.
+- [x] El `VirtualGamepad` es visible solo en dispositivos con `maxTouchPoints > 0` y pantallas `< md` (Tailwind).
+- [x] El layout en móvil es estrictamente vertical: `Canvas` $\rightarrow$ `Gamepad` $\rightarrow$ `Footer (Pause/Skins)`.
+- [x] El HUD de React (puntuación, vidas, etc.) está completamente oculto en modo móvil.
+- [x] El canvas se ajusta dinámicamente para evitar el desbordamiento vertical en pantallas pequeñas.
+- [x] Presionar las flechas y botones del Gamepad ejecuta la acción correcta en los 4 juegos reales.
+- [x] El teclado físico sigue funcionando correctamente en modo escritorio y modo híbrido.
+- [x] El estilo visual del gamepad es coherente con la estética neon/retro del resto de la plataforma.
+- [x] `tsc --noEmit` pasa sin errores.
 
 ---
 
@@ -116,3 +116,4 @@ Componente que encapsula el `GameCanvas`, el `VirtualGamepad` y el footer de acc
 - **Yes:** Detección combinada de `navigator.maxTouchPoints` y breakpoints de Tailwind (`md`) para asegurar que la UI solo aparezca en contextos táctiles reales.
 - **Yes:** Implementación de controles fuera del canvas mediante componentes React para facilitar el mantenimiento y el estilo CSS.
 - **Yes:** Coexistencia de inputs (Táctil + Teclado) para soportar dispositivos híbridos.
+- **Yes:** Forzar `aspect-ratio` y `z-index` en CSS para los canvas de los juegos (especialmente Tetris y Arkanoid) para prevenir distorsiones y solapamientos con fondos decorativos en modo móvil.
