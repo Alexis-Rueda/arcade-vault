@@ -183,33 +183,37 @@ export class ArkanoidEngine implements GameEngine {
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
-    this.keys[e.code] = true;
+    const key = e.key;
+    const code = e.code;
+    this.keys[code] = true;
+    this.keys[key] = true;
     if (this.screen === 'title') {
-      if (e.code === 'ArrowUp') {
+      if (code === 'ArrowUp' || key === 'w') {
         this.selectedLevel = Math.max(0, this.selectedLevel - 1);
-      } else if (e.code === 'ArrowDown') {
+      } else if (code === 'ArrowDown' || key === 's') {
         this.selectedLevel = Math.min(
           LEVELS.length - 1,
           this.selectedLevel + 1,
         );
-      } else if (e.code === 'Enter' || e.code === 'Space') {
+      } else if (code === 'Enter' || code === 'Space' || key === ' ') {
         this.loadLevel(this.selectedLevel);
       }
       return;
     }
     if (
-      (e.code === 'KeyP' || e.code === 'Escape') &&
+      (code === 'KeyP' || code === 'Escape' || key === 'p') &&
       this.screen === 'playing'
     ) {
       this.paused = !this.paused;
     }
-    if (e.code === 'Space') {
+    if (code === 'Space' || key === ' ') {
       this.launchBall();
     }
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
     this.keys[e.code] = false;
+    this.keys[e.key] = false;
   };
 
   private onMouseMove = (e: MouseEvent) => {
@@ -320,8 +324,8 @@ export class ArkanoidEngine implements GameEngine {
       return;
     }
 
-    if (this.keys['ArrowLeft']) this.paddle.x -= 6;
-    if (this.keys['ArrowRight']) this.paddle.x += 6;
+    if (this.keys['ArrowLeft'] || this.keys['a']) this.paddle.x -= 6;
+    if (this.keys['ArrowRight'] || this.keys['d']) this.paddle.x += 6;
     this.paddle.x = Math.max(0, Math.min(W - this.paddle.w, this.paddle.x));
 
     if (!this.ball.active) {

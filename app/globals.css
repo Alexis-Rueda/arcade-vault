@@ -1387,6 +1387,8 @@ body.game-active-mobile .av-main {
   height: 600px;
   max-width: 100%;
   max-height: 100%;
+  aspect-ratio: 300 / 600;
+  object-fit: contain;
   background: #1a1a25;
   border: 1px solid #2a2a3a;
   border-radius: 4px;
