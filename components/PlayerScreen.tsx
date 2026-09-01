@@ -8,6 +8,7 @@ import { useScores } from '@/lib/hooks/useScores';
 import { insertScore } from '@/lib/supabase/scores';
 import { getRealGame } from '@/lib/games/registry';
 import { SkinSwitcher } from './games/SkinSwitcher';
+import MobileGameLayout from './games/MobileGameLayout';
 import { useSkinWith } from '@/lib/hooks/useSkin';
 import { SKINS_BY_GAME, GLOBAL_SKIN_CONFIG } from '@/lib/games/skins';
 import type { Game } from '@/app/data/types';
@@ -37,13 +38,29 @@ export function PlayerScreen({ game }: { game: Game }) {
   const level = realGame ? engineLevel : derivedLevel;
 
   useEffect(() => {
-    if (realGame || over || paused) return;
-    const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
-      220,
-    );
-    return () => clearInterval(t);
-  }, [over, paused, realGame]);
+    if (realGame && typeof window !== 'undefined') {
+      const checkMobile = () => {
+        const isTouch = navigator.maxTouchPoints > 0;
+        const isSmallScreen = window.innerWidth < 768;
+        if (isTouch && isSmallScreen) {
+          document.body.classList.add('game-active-mobile');
+        } else {
+          document.body.classList.remove('game-active-mobile');
+        }
+      };
+
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => {
+        window.removeEventListener('resize', checkMobile);
+        document.body.classList.remove('game-active-mobile');
+      };
+    }
+
+    return () => {
+      document.body.classList.remove('game-active-mobile');
+    };
+  }, [realGame]);
 
   const endGame = () => setOver(true);
   const restart = () => {
@@ -78,8 +95,10 @@ export function PlayerScreen({ game }: { game: Game }) {
   };
 
   return (
-    <div className="av-player fade-in">
-      <div className="player-hud">
+    <div
+      className={`av-player fade-in ${realGame ? 'game-active-mobile' : ''}`}
+    >
+      <div className={`player-hud ${realGame ? 'hidden-mobile' : ''}`}>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <div className="hud-stat">
             <div className="l">Jugador</div>
@@ -136,52 +155,97 @@ export function PlayerScreen({ game }: { game: Game }) {
         </div>
       </div>
 
-      <CrtFrame title={game.title}>
-        {realGame ? (
-          <realGame.Component
-            paused={paused}
-            onScore={setScore}
-            onLives={setLives}
-            onLevel={setEngineLevel}
-            onOver={(final) => {
-              setScore(final);
-              setOver(true);
-            }}
-            handleRef={gameRef}
-          />
-        ) : (
-          <div className="game-arena">
-            <div className="grid-floor" />
-            <div className="enemy e1" />
-            <div className="enemy e2" />
-            <div className="enemy e3" />
-            <div className="player-ship" />
-          </div>
-        )}
-        {paused && (
-          <div
-            className="crt-content"
-            style={{ background: 'rgba(0,0,0,0.6)', zIndex: 5 }}
-          >
-            <div>
-              <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
-                EN PAUSA
-              </div>
-              <div
-                className="mono"
-                style={{
-                  fontSize: 11,
-                  color: 'var(--ink-dim)',
-                  marginTop: 10,
-                  letterSpacing: '0.16em',
+      {/* Layout wrap for mobile touch controls */}
+      <MobileGameLayout
+        gameId={game.id}
+        footer={
+          <div className="hud-actions flex flex-col gap-4">
+            <div className="flex gap-3 justify-center items-center">
+              <button
+                className="btn yellow"
+                onClick={() => setPaused((p) => !p)}
+              >
+                {paused ? 'REANUDAR' : 'PAUSA'}
+              </button>
+              {game.skins && skinConfig && (
+                <div className="v">
+                  <SkinSwitcher
+                    current={skin}
+                    onChange={setSkin}
+                    options={skinConfig.options}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 justify-center items-center">
+              <button
+                className="btn magenta"
+                onClick={() => {
+                  if (realGame) {
+                    return gameRef.current?.end() ?? endGame();
+                  }
+                  return endGame();
                 }}
               >
-                PULSA REANUDAR PARA CONTINUAR
-              </div>
+                FIN
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => router.push(`/games/${game.id}`)}
+              >
+                SALIR
+              </button>
             </div>
           </div>
-        )}
-      </CrtFrame>
+        }
+      >
+        <CrtFrame title={game.title}>
+          {realGame ? (
+            <realGame.Component
+              paused={paused}
+              onScore={setScore}
+              onLives={setLives}
+              onLevel={setEngineLevel}
+              onOver={(final) => {
+                setScore(final);
+                setOver(true);
+              }}
+              handleRef={gameRef}
+            />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor" />
+              <div className="enemy e1" />
+              <div className="enemy e2" />
+              <div className="enemy e3" />
+              <div className="player-ship" />
+            </div>
+          )}
+          {paused && (
+            <div
+              className="crt-content"
+              style={{ background: 'rgba(0,0,0,0.6)', zIndex: 5 }}
+            >
+              <div>
+                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                  EN PAUSA
+                </div>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--ink-dim)',
+                    marginTop: 10,
+                    letterSpacing: '0.16em',
+                  }}
+                >
+                  PULSA REANUDAR PARA CONTINUAR
+                </div>
+              </div>
+            </div>
+          )}
+        </CrtFrame>
+      </MobileGameLayout>
 
       {over && (
         <div className="modal-bd" onClick={() => {}}>
@@ -191,16 +255,17 @@ export function PlayerScreen({ game }: { game: Game }) {
             <div className="final">{score.toLocaleString('es-ES')}</div>
             {!saved ? (
               <>
-                <div className="input-row">
+                <div className="input-row flex flex-col sm:flex-row gap-3 items-center">
                   <input
                     value={name}
                     onChange={(e) =>
                       setName(e.target.value.toUpperCase().slice(0, 10))
                     }
                     placeholder="TUS INICIALES"
+                    className="w-full sm:w-auto"
                   />
                   <button
-                    className="btn yellow"
+                    className="btn yellow w-full sm:w-auto"
                     onClick={handleSave}
                     disabled={saving}
                   >
