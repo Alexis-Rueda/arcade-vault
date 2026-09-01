@@ -1333,7 +1333,36 @@ a {
   }
 }
 
-/* real game canvas (800x600 internal, CSS-scaled) */
+body.game-active-mobile .av-nav,
+body.game-active-mobile footer {
+  display: none !important;
+}
+body.game-active-mobile .av-player {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+}
+body.game-active-mobile .av-main {
+  height: 100dvh;
+}
+
+.hidden-mobile {
+  @media (max-width: 767px) {
+    display: none;
+  }
+}
+
+.game-active-mobile {
+  @media (max-width: 767px) {
+    .av-nav,
+    footer {
+      display: none !important;
+    }
+  }
+}
+
+/* ===== game canvas (800x600 internal, CSS-scaled) ===== */
 .game-canvas {
   display: block;
   max-width: 100%;
@@ -1358,6 +1387,8 @@ a {
   height: 600px;
   max-width: 100%;
   max-height: 100%;
+  aspect-ratio: 300 / 600;
+  object-fit: contain;
   background: #1a1a25;
   border: 1px solid #2a2a3a;
   border-radius: 4px;
@@ -1408,16 +1439,19 @@ a {
 }
 .skin-select {
   font-family: var(--pixel);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  padding: 4px 8px;
+  padding: 12px 20px;
   border: 1px solid var(--ink-faint);
   border-radius: 4px;
   background: var(--bg-2);
   color: var(--cyan);
   cursor: pointer;
   outline: none;
+  height: 44px;
+  display: flex;
+  align-items: center;
 }
 .skin-select:hover,
 .skin-select:focus {

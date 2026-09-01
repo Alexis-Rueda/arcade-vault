@@ -202,10 +202,10 @@ class Ship {
     const THRUST = 260;
     const DRAG = 0.987;
 
-    if (keys['ArrowLeft']) this.angle -= ROT * dt;
-    if (keys['ArrowRight']) this.angle += ROT * dt;
+    if (keys['ArrowLeft'] || keys['a']) this.angle -= ROT * dt;
+    if (keys['ArrowRight'] || keys['d']) this.angle += ROT * dt;
 
-    this.thrusting = !!keys['ArrowUp'];
+    this.thrusting = !!(keys['ArrowUp'] || keys['w']);
     if (this.thrusting) {
       this.vx += Math.cos(this.angle) * THRUST * dt;
       this.vy += Math.sin(this.angle) * THRUST * dt;
@@ -360,16 +360,22 @@ export class AsteroidesEngine implements GameEngine {
 
   private onKeyDown = (e: KeyboardEvent) => {
     if (this.state === 'playing' || this.state === 'dead') {
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space'].includes(e.code)) {
+      if (
+        ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space'].includes(e.code) ||
+        ['a', 'd', 'w', ' '].includes(e.key)
+      ) {
         e.preventDefault();
       }
     }
     if (!this.keys[e.code]) this.justPressed[e.code] = true;
+    if (!this.keys[e.key]) this.justPressed[e.key] = true;
     this.keys[e.code] = true;
+    this.keys[e.key] = true;
   };
 
   private onKeyUp = (e: KeyboardEvent) => {
     this.keys[e.code] = false;
+    this.keys[e.key] = false;
   };
 
   private pressed(code: string) {
@@ -471,7 +477,7 @@ export class AsteroidesEngine implements GameEngine {
       return;
     }
 
-    if (this.pressed('Space')) {
+    if (this.pressed('Space') || this.pressed(' ') || this.keys[' ']) {
       this.bullets.push(...this.ship.tryShoot());
     }
 

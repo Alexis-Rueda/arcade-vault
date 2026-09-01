@@ -130,8 +130,9 @@ export class TetrisEngine implements GameEngine {
 
   private onKeyDown = (e: KeyboardEvent) => {
     if (this.paused || this.gameOver) return;
-    switch (e.code) {
+    switch (e.key) {
       case 'ArrowLeft':
+      case 'a':
         e.preventDefault();
         if (
           !collide(
@@ -144,6 +145,7 @@ export class TetrisEngine implements GameEngine {
           this.current.x--;
         break;
       case 'ArrowRight':
+      case 'd':
         e.preventDefault();
         if (
           !collide(
@@ -156,15 +158,18 @@ export class TetrisEngine implements GameEngine {
           this.current.x++;
         break;
       case 'ArrowDown':
+      case 's':
         e.preventDefault();
         this.softDrop();
         break;
       case 'ArrowUp':
-      case 'KeyX':
+      case 'x':
+      case 'q':
         e.preventDefault();
         this.tryRotate();
         break;
-      case 'Space':
+      case ' ':
+      case 'e':
         e.preventDefault();
         this.hardDrop();
         break;
@@ -343,15 +348,26 @@ export class TetrisEngine implements GameEngine {
   private drawNext() {
     const ctx = this.nextCtx;
     if (!ctx) return;
+    const canvas = ctx.canvas;
     const colors = this.getColors();
-    const NB = 30;
-    ctx.clearRect(0, 0, NB * 4, NB * 4);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const shape = this.next.shape;
-    const offX = Math.floor((4 - shape[0].length) / 2);
-    const offY = Math.floor((4 - shape.length) / 2);
+    const matrixCols = shape[0].length;
+    const matrixRows = shape.length;
+    const pBlockSize = Math.floor(Math.min(canvas.width, canvas.height) / 4);
+    const offsetX = Math.floor((canvas.width - matrixCols * pBlockSize) / 2);
+    const offsetY = Math.floor((canvas.height - matrixRows * pBlockSize) / 2);
     for (let r = 0; r < shape.length; r++)
       for (let c = 0; c < shape[r].length; c++)
-        drawBlock(ctx, offX + c, offY + r, shape[r][c], NB, colors);
+        if (shape[r][c]) {
+          ctx.fillStyle = colors[shape[r][c]] as string;
+          ctx.fillRect(
+            offsetX + c * pBlockSize,
+            offsetY + r * pBlockSize,
+            pBlockSize - 2,
+            pBlockSize - 2,
+          );
+        }
   }
 
   private loop = (ts: number) => {
