@@ -17,6 +17,7 @@ import {
 interface Pipe {
   x: number;
   gapY: number; // top of gap
+  scored?: boolean;
 }
 
 export class FlappyPixelEngine implements GameEngine {
@@ -112,7 +113,7 @@ export class FlappyPixelEngine implements GameEngine {
     this.pipes.forEach((p) => {
       if (!p['scored'] && p.x + PIPE_WIDTH / 2 < BIRD_SIZE) {
         this.score += POINTS_PER_PIPE;
-        (p as any).scored = true;
+        p.scored = true;
         this.callbacks.onScore?.(this.score);
       }
     });
