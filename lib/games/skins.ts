@@ -36,7 +36,7 @@ export const GLOBAL_SKIN_CONFIG: SkinConfig = {
 export const SKINS_BY_GAME: Record<string, SkinConfig> = {
   asteroides: GLOBAL_SKIN_CONFIG,
   arkanoid: GLOBAL_SKIN_CONFIG,
-  flappy-pixel: GLOBAL_SKIN_CONFIG,
+  'flappy-pixel': GLOBAL_SKIN_CONFIG,
   tetris: {
     storageKey: 'av-skin-tetris',
     defaultSkin: 'retro',
