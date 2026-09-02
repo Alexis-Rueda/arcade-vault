@@ -23,6 +23,7 @@ export const REAL_GAMES: readonly {
   { id: 'tetris', Component: TetrisGame },
   { id: 'arkanoid', Component: ArkanoidGame },
   { id: 'snake', Component: SnakeGame },
+  { id: 'flappy-pixel', Component: FlappyPixelGame },
 ];
 
 export const isRealGame = (id: string): boolean =>
