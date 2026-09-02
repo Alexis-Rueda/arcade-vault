@@ -32,13 +32,3 @@ export const PALETTES = createPalette({
     textDim: 'rgba(255, 0, 229, 0.7)',
   },
 });
-export const H = 600;
-export const MAX_DT = 50;
-export const GRAVITY = 0.5;
-export const FLAP_FORCE = -8;
-export const PIPE_SPEED = 2;
-export const PIPE_GAP = 150;
-export const PIPE_WIDTH = 60;
-export const PIPE_INTERVAL = 1500; // ms
-export const BIRD_SIZE = 20;
-export const POINTS_PER_PIPE = 1;
