@@ -16,6 +16,7 @@ Available in `.agents/skills/`:
 - **`/frontend-design`** — UI design with intentional aesthetic direction (avoids "AI slop"). Always use when creating UI.
 - **`/spec`** — design specs section by section in `specs/NN-slug.md` (`Draft` state by default). Ask before assuming.
 - **`/spec-impl`** — implement specs in `Approved` state. Creates branch `spec-NN-slug`. Works step by step with pauses to review diffs.
+- **`/spec-impl-game`** — implements an approved spec and then runs `@skin-designer` and `@mobile-porter` sequentially.
 - **`/add-game`** — design the spec for a new game (ported from `references/started-games/` or from scratch) with its Supabase leaderboard. Only generates the spec; implement with `/spec-impl`.
 
 ## Agents
@@ -25,6 +26,7 @@ Project-scoped opencode agents in `.opencode/agents/` (invoke with `@<name>`):
 - **`@game-jam`** — given a theme/concept, derives a `game-id` and writes **≥2 distinct design variants** of the same game as specs in `specs/game-jam/<game-id>/` (local numbering `01-`, `02-`). States specs `Draft`; writes only `.md`, never code. Lives at `.opencode/agents/game-jam.md`.
 - **`@game-planner`** — plans and decides which arcade game to build next in Arcade Vault. Inventories the catalog and available references, proposes ranked candidates by criteria (genre gap, portability, canvas-fit, leaderboard engagement, visual novelty) and keeps a persistent memory of suggestions in `references/game-suggestions-todo.md` to avoid repeats. Only recommends and records — never implements or writes specs. Lives at `.opencode/agents/game-planner.md`.
 - **`@skin-designer`** — audits and implements skins (neon, retro, clásico) on a **single game per invocation** (`@skin-designer <game-id>`). Maintains a persistent memory in `references/game-with-themes.md` tracking which games already have skins. Tetris is excluded (has its own skin system). Creates shared infra on first invocation (`lib/games/skins.ts`, `lib/hooks/useSkin.ts`, `components/games/SkinSwitcher.tsx`). Only touches the specified game's engine + wrapper. Lives at `.opencode/agents/skin-designer.md`.
+- **`@mobile-porter`** — adapta cualquier juego arcade para que funcione y se vea bien en dispositivos móviles, siguiendo los estándares de SPEC 10. Genera ajustes de UI responsiva, redimensionamiento del canvas y adapta los controles táctiles. Vive en `.opencode/agents/mobile-porter.md`.
 
 ## Implemented Games
 
