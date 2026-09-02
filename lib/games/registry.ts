@@ -2,7 +2,7 @@ import type { ComponentType } from 'react';
 import { AsteroidesGame } from '@/components/games/AsteroidesGame';
 import { TetrisGame } from '@/components/games/TetrisGame';
 import { ArkanoidGame } from '@/components/games/ArkanoidGame';
-import { SnakeGame } from '@/components/games/SnakeGame';
+import { FlappyPixelGame } from '@/components/games/FlappyPixelGame';
 import type { GameHandle } from '@/lib/games/types';
 
 export type RealGameWrapperProps = {
