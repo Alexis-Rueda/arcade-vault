@@ -45,4 +45,12 @@ export const TOUCH_CONTROLS: Record<string, ControlMap> = {
     BTN_A: ' ',
     BTN_B: 'p',
   },
+  flappy-pixel: {
+    UP: 'w',
+    DOWN: 's',
+    LEFT: 'a',
+    RIGHT: 'd',
+    BTN_A: ' ',
+    BTN_B: 'p',
+  },
 };

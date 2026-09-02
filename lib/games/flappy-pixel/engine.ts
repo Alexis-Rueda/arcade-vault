@@ -1,4 +1,4 @@
-import type { GameEngine, GameCallbacks } from '@/lib/games/types';
+import type { GameEngine, GameCallbacks, PaletteRef } from '@/lib/games/types';
 import {
   W,
   H,
@@ -11,6 +11,7 @@ import {
   BIRD_SIZE,
   POINTS_PER_PIPE,
   MAX_DT,
+  PALETTES,
 } from './constants';
 
 interface Pipe {
@@ -26,6 +27,7 @@ export class FlappyPixelEngine implements GameEngine {
   private lastTime = 0;
   private dtAcc = 0;
   private paused = false;
+  private paletteRef: PaletteRef | null = null;
 
   // state
   private birdY = H / 2;
@@ -35,12 +37,17 @@ export class FlappyPixelEngine implements GameEngine {
   private score = 0;
   private gameOver = false;
 
-  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    callbacks: GameCallbacks,
+    extra?: { palette?: PaletteRef | null },
+  ) {
     this.canvas = canvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D context not available');
     this.ctx = ctx;
     this.callbacks = callbacks;
+    this.paletteRef = extra?.palette ?? null;
     this.init();
   }
 
@@ -79,15 +86,19 @@ export class FlappyPixelEngine implements GameEngine {
     this.rafId = requestAnimationFrame(loop);
   }
 
+  private getColors(): Record<string, string> {
+    const cur = this.paletteRef?.current;
+    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+  }
+
   private update(dt: number) {
     // gravity
     this.birdV += GRAVITY;
     this.birdY += this.birdV;
-    // flap handled via external call
     // spawn pipes
     this.nextPipeTime -= dt;
     if (this.nextPipeTime <= 0) {
-      const gapY = Math.random() * (H - PIPE_GAP - 40) + 20; // keep within bounds
+      const gapY = Math.random() * (H - PIPE_GAP - 40) + 20;
       this.pipes.push({ x: W, gapY });
       this.nextPipeTime = PIPE_INTERVAL;
     }
@@ -108,9 +119,7 @@ export class FlappyPixelEngine implements GameEngine {
   }
 
   private checkCollisions() {
-    // ground/ceiling
     if (this.birdY < 0 || this.birdY > H) this.endGame();
-    // pipes
     const birdRect = { x: 50, y: this.birdY, w: BIRD_SIZE, h: BIRD_SIZE };
     for (const pipe of this.pipes) {
       const topRect = { x: pipe.x, y: 0, w: PIPE_WIDTH, h: pipe.gapY };
@@ -140,12 +149,15 @@ export class FlappyPixelEngine implements GameEngine {
   }
 
   private render() {
-    this.clearCanvas();
+    const colors = this.getColors();
+    // background
+    this.ctx.fillStyle = colors.field;
+    this.ctx.fillRect(0, 0, W, H);
     // bird
-    this.ctx.fillStyle = '#FF0';
+    this.ctx.fillStyle = colors.player;
     this.ctx.fillRect(50, this.birdY, BIRD_SIZE, BIRD_SIZE);
     // pipes
-    this.ctx.fillStyle = '#0F0';
+    this.ctx.fillStyle = colors.accent;
     for (const pipe of this.pipes) {
       // top
       this.ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.gapY);
@@ -158,7 +170,7 @@ export class FlappyPixelEngine implements GameEngine {
       );
     }
     // score HUD
-    this.ctx.fillStyle = '#fff';
+    this.ctx.fillStyle = colors.hudText;
     this.ctx.font = '20px sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.fillText(`SCORE: ${this.score}`, W / 2, 30);
@@ -196,4 +208,5 @@ export class FlappyPixelEngine implements GameEngine {
 export const createFlappyPixelGame = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
-) => new FlappyPixelEngine(canvas, callbacks);
+  extra?: { palette?: PaletteRef | null },
+) => new FlappyPixelEngine(canvas, callbacks, extra);

@@ -4,12 +4,12 @@
 
 ## Registro de juegos
 
-| ID         | Juego      | Skins                   | Default | Fecha      |
-| ---------- | ---------- | ----------------------- | ------- | ---------- |
-| tetris     | Tetris     | retro neon pastel pixel | retro   | 2026-08-27 |
-| asteroides | Asteroides | clasico retro neon      | clasico | 2026-08-27 |
-| arkanoid   | Arkanoid   | clasico retro neon      | clasico | 2026-08-27 |
-| snake      | Snake      | clasico retro neon      | clasico | 2026-08-27 |
+| ID           | Juego        | Skins                   | Default | Fecha      |
+| ------------ | ------------ | ----------------------- | ------- | ---------- |
+| tetris       | Tetris       | retro neon pastel pixel | retro   | 2026-08-27 |
+| asteroides   | Asteroides   | clasico retro neon      | clasico | 2026-08-27 |
+| arkanoid     | Arkanoid     | clasico retro neon      | clasico | 2026-08-27 |
+| flappy-pixel | Flappy Pixel | clasico retro neon      | clasico | 2026-09-02 |
 
 ## Regla
 
