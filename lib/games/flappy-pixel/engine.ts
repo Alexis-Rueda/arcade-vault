@@ -7,7 +7,8 @@ import {
   PIPE_SPEED,
   PIPE_GAP,
   PIPE_WIDTH,
-  PIPE_INTERVAL,
+  PIPE_DISTANCE,
+  BIRD_X,
   BIRD_SIZE,
   POINTS_PER_PIPE,
   MAX_DT,
@@ -16,9 +17,11 @@ import {
 
 interface Pipe {
   x: number;
-  gapY: number; // top of gap
-  scored?: boolean;
+  gapY: number;
+  passed: boolean;
 }
+
+type GameState = 'waiting' | 'playing' | 'gameover';
 
 export class FlappyPixelEngine implements GameEngine {
   private canvas: HTMLCanvasElement;
@@ -30,13 +33,24 @@ export class FlappyPixelEngine implements GameEngine {
   private paused = false;
   private paletteRef: PaletteRef | null = null;
 
-  // state
   private birdY = H / 2;
   private birdV = 0;
   private pipes: Pipe[] = [];
-  private nextPipeTime = 0;
   private score = 0;
+  private state: GameState = 'waiting';
   private gameOver = false;
+  private lastGapY = H / 2 - PIPE_GAP / 2;
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      this.flap();
+    }
+  };
+
+  private onClick = () => {
+    this.flap();
+  };
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -49,16 +63,21 @@ export class FlappyPixelEngine implements GameEngine {
     this.ctx = ctx;
     this.callbacks = callbacks;
     this.paletteRef = extra?.palette ?? null;
+
+    window.addEventListener('keydown', this.onKeyDown);
+    canvas.addEventListener('click', this.onClick);
+
     this.init();
   }
 
   private init() {
-    this.birdY = H / 2;
+    this.birdY = H / 2 - 50 - BIRD_SIZE / 2;
     this.birdV = 0;
     this.pipes = [];
-    this.nextPipeTime = 0;
     this.score = 0;
+    this.state = 'waiting';
     this.gameOver = false;
+    this.lastGapY = H / 2 - PIPE_GAP / 2;
     this.clearCanvas();
     this.startLoop();
   }
@@ -92,104 +111,149 @@ export class FlappyPixelEngine implements GameEngine {
     return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
   }
 
-  private update(dt: number) {
-    // gravity
+  private spawnPipe() {
+    const isFirst = this.pipes.length === 0;
+    const minGapY = 60;
+    const maxGapY = H - PIPE_GAP - 60;
+    const maxDelta = 100;
+    const min = Math.max(minGapY, this.lastGapY - maxDelta);
+    const max = Math.min(maxGapY, this.lastGapY + maxDelta);
+    const gapY = isFirst
+      ? H / 2 - PIPE_GAP / 2
+      : min + Math.random() * (max - min);
+    this.lastGapY = gapY;
+    this.pipes.push({ x: W, gapY, passed: false });
+  }
+
+  private update(_dt: number) {
+    if (this.state !== 'playing') return;
+
     this.birdV += GRAVITY;
     this.birdY += this.birdV;
-    // spawn pipes
-    this.nextPipeTime -= dt;
-    if (this.nextPipeTime <= 0) {
-      const gapY = Math.random() * (H - PIPE_GAP - 40) + 20;
-      this.pipes.push({ x: W, gapY });
-      this.nextPipeTime = PIPE_INTERVAL;
+
+    // Spawn pipes by distance
+    const lastPipe = this.pipes[this.pipes.length - 1];
+    if (!lastPipe || lastPipe.x <= W - PIPE_DISTANCE) {
+      this.spawnPipe();
     }
-    // move pipes
-    this.pipes.forEach((p) => (p.x -= PIPE_SPEED));
-    // remove off-screen
-    this.pipes = this.pipes.filter((p) => p.x + PIPE_WIDTH > 0);
-    // check collisions
-    this.checkCollisions();
-    // score when bird passes pipe center
-    this.pipes.forEach((p) => {
-      if (!p['scored'] && p.x + PIPE_WIDTH / 2 < BIRD_SIZE) {
+
+    // Move pipes
+    for (const pipe of this.pipes) {
+      pipe.x -= PIPE_SPEED;
+    }
+
+    // Score
+    for (const pipe of this.pipes) {
+      if (!pipe.passed && pipe.x + PIPE_WIDTH < BIRD_X) {
+        pipe.passed = true;
         this.score += POINTS_PER_PIPE;
-        p.scored = true;
         this.callbacks.onScore?.(this.score);
       }
-    });
+    }
+
+    // Remove off-screen
+    this.pipes = this.pipes.filter((p) => p.x + PIPE_WIDTH > -10);
+
+    this.checkCollisions();
   }
 
   private checkCollisions() {
-    if (this.birdY < 0 || this.birdY > H) this.endGame();
-    const birdRect = { x: 50, y: this.birdY, w: BIRD_SIZE, h: BIRD_SIZE };
+    // Floor / ceiling
+    if (this.birdY < 0 || this.birdY + BIRD_SIZE > H) {
+      this.endGame();
+      return;
+    }
+
+    const bx = BIRD_X;
+    const by = this.birdY;
+    const bw = BIRD_SIZE;
+    const bh = BIRD_SIZE;
+
     for (const pipe of this.pipes) {
-      const topRect = { x: pipe.x, y: 0, w: PIPE_WIDTH, h: pipe.gapY };
-      const bottomRect = {
-        x: pipe.x,
-        y: pipe.gapY + PIPE_GAP,
-        w: PIPE_WIDTH,
-        h: H - pipe.gapY - PIPE_GAP,
-      };
-      if (
-        this.intersect(birdRect, topRect) ||
-        this.intersect(birdRect, bottomRect)
-      ) {
+      const px = pipe.x;
+      const pw = PIPE_WIDTH;
+
+      // Horizontal overlap check first
+      if (bx + bw <= px || bx >= px + pw) continue;
+
+      // Top pipe: from y=0 to y=gapY
+      if (by < pipe.gapY) {
         this.endGame();
-        break;
+        return;
+      }
+
+      // Bottom pipe: from y=gapY+PIPE_GAP to y=H
+      if (by + bh > pipe.gapY + PIPE_GAP) {
+        this.endGame();
+        return;
       }
     }
-  }
-
-  private intersect(
-    a: { x: number; y: number; w: number; h: number },
-    b: { x: number; y: number; w: number; h: number },
-  ) {
-    return (
-      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
-    );
   }
 
   private render() {
     const colors = this.getColors();
-    // background
+
+    // Background
     this.ctx.fillStyle = colors.field;
     this.ctx.fillRect(0, 0, W, H);
-    // bird
-    this.ctx.fillStyle = colors.player;
-    this.ctx.fillRect(50, this.birdY, BIRD_SIZE, BIRD_SIZE);
-    // pipes
-    this.ctx.fillStyle = colors.accent;
-    for (const pipe of this.pipes) {
-      // top
-      this.ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.gapY);
-      // bottom
-      this.ctx.fillRect(
-        pipe.x,
-        pipe.gapY + PIPE_GAP,
-        PIPE_WIDTH,
-        H - pipe.gapY - PIPE_GAP,
-      );
+
+    // Pipes
+    if (this.state === 'playing' || this.state === 'gameover') {
+      this.ctx.fillStyle = colors.accent;
+      for (const pipe of this.pipes) {
+        // Top pipe
+        this.ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.gapY);
+        // Bottom pipe
+        this.ctx.fillRect(
+          pipe.x,
+          pipe.gapY + PIPE_GAP,
+          PIPE_WIDTH,
+          H - pipe.gapY - PIPE_GAP,
+        );
+        // Pipe caps (decorative)
+        this.ctx.fillStyle = colors.accentDim;
+        this.ctx.fillRect(pipe.x - 3, pipe.gapY - 12, PIPE_WIDTH + 6, 12);
+        this.ctx.fillRect(pipe.x - 3, pipe.gapY + PIPE_GAP, PIPE_WIDTH + 6, 12);
+        this.ctx.fillStyle = colors.accent;
+      }
     }
-    // score HUD
+
+    // Bird
+    this.ctx.fillStyle = colors.player;
+    this.ctx.fillRect(BIRD_X, this.birdY, BIRD_SIZE, BIRD_SIZE);
+
+    // Score HUD
     this.ctx.fillStyle = colors.hudText;
-    this.ctx.font = '20px sans-serif';
+    this.ctx.font = 'bold 24px monospace';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(`SCORE: ${this.score}`, W / 2, 30);
+    this.ctx.fillText(String(this.score), W / 2, 36);
+
+    // Waiting message
+    if (this.state === 'waiting') {
+      this.ctx.fillStyle = colors.text;
+      this.ctx.font = '16px monospace';
+      this.ctx.fillText('TAP TO START', W / 2, H / 2 + 60);
+    }
   }
 
-  // external API
   public flap() {
     if (this.gameOver) return;
+    if (this.state === 'waiting') {
+      this.state = 'playing';
+      this.spawnPipe();
+    }
     this.birdV = FLAP_FORCE;
   }
 
   setPaused(paused: boolean) {
     this.paused = paused;
+    if (!paused) this.lastTime = 0;
   }
 
   endGame() {
     if (this.gameOver) return;
     this.gameOver = true;
+    this.state = 'gameover';
     this.callbacks.onGameOver?.(this.score);
     if (this.rafId) cancelAnimationFrame(this.rafId);
   }
@@ -203,6 +267,8 @@ export class FlappyPixelEngine implements GameEngine {
 
   destroy() {
     if (this.rafId) cancelAnimationFrame(this.rafId);
+    window.removeEventListener('keydown', this.onKeyDown);
+    this.canvas.removeEventListener('click', this.onClick);
   }
 }
 

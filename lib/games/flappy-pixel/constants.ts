@@ -1,18 +1,28 @@
 export const W = 400;
 export const H = 600;
 export const MAX_DT = 50;
-export const GRAVITY = 0.5;
-export const FLAP_FORCE = -8;
-export const PIPE_SPEED = 2;
+export const GRAVITY = 1.4;
+export const FLAP_FORCE = -7.5;
+export const PIPE_SPEED = 3.0;
 export const PIPE_GAP = 150;
-export const PIPE_WIDTH = 60;
-export const PIPE_INTERVAL = 1500; // ms
+export const PIPE_WIDTH = 52;
+export const PIPE_DISTANCE = 180;
+export const BIRD_X = 80;
 export const BIRD_SIZE = 20;
 export const POINTS_PER_PIPE = 1;
 
-import { createPalette } from '@/lib/games/skins';
+import type { SkinId } from '@/lib/games/skins';
 
-export const PALETTES = createPalette({
+export const PALETTES: Record<SkinId, Record<string, string>> = {
+  clasico: {
+    field: '#000',
+    player: '#0f0',
+    accent: '#f33',
+    accentDim: '#c00',
+    hudText: '#fff',
+    text: '#fff',
+    textDim: '#aaa',
+  },
   retro: {
     field: '#05010d',
     player: '#00ff41',
@@ -31,4 +41,4 @@ export const PALETTES = createPalette({
     text: '#00fff0',
     textDim: 'rgba(255, 0, 229, 0.7)',
   },
-});
+};
