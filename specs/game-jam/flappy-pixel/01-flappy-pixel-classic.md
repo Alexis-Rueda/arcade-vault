@@ -1,6 +1,6 @@
 # SPEC 01 — FLAPPY PIXEL CLASSIC, flappy bird purista con un toque (variante A)
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 05 (juego real), SPEC 06 (leaderboard Supabase)
 > **Date:** 2026-08-27
 > **Objective:** Diseñar FLAPPY PIXEL CLASSIC, un flappy bird puro con controles de un toque, tuberías y scoring por huecos superados, como game-jam del tema "un toque".

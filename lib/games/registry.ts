@@ -3,6 +3,7 @@ import { AsteroidesGame } from '@/components/games/AsteroidesGame';
 import { TetrisGame } from '@/components/games/TetrisGame';
 import { ArkanoidGame } from '@/components/games/ArkanoidGame';
 import { SnakeGame } from '@/components/games/SnakeGame';
+import { FlappyPixelGame } from '@/components/games/FlappyPixelGame';
 import type { GameHandle } from '@/lib/games/types';
 
 export type RealGameWrapperProps = {
@@ -23,6 +24,7 @@ export const REAL_GAMES: readonly {
   { id: 'tetris', Component: TetrisGame },
   { id: 'arkanoid', Component: ArkanoidGame },
   { id: 'snake', Component: SnakeGame },
+  { id: 'flappy-pixel', Component: FlappyPixelGame },
 ];
 
 export const isRealGame = (id: string): boolean =>

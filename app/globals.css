@@ -763,6 +763,29 @@ a {
   filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.5));
 }
 
+.cover-flappy-pixel {
+  background: radial-gradient(circle at 50% 50%, #0a1a2a, #020a1a);
+}
+.cover-flappy-pixel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* Pájaro pixel (cuadrado amarillo) */
+    linear-gradient(90deg, #ffdd00, #ffaa00) 35% 45% / 32px 32px no-repeat,
+    /* Ojo del pájaro */
+    radial-gradient(
+        circle at calc(35% + 22px) calc(45% + 8px),
+        #000 0 4px,
+        transparent 5px
+      ),
+    /* Tubería superior */ linear-gradient(90deg, #00ff88, #00cc66) 65% 0 / 24px
+      35% no-repeat,
+    /* Tubería inferior */ linear-gradient(90deg, #00ff88, #00cc66) 65% 65% /
+      24px 35% no-repeat;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 136, 0.4));
+}
+
 .cover-glot {
   background: radial-gradient(circle at 50% 50%, #1a002a, #0a0a18);
 }

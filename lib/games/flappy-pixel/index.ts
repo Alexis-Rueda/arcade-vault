@@ -1,0 +1,1 @@
+export { createFlappyPixelGame } from './engine';
