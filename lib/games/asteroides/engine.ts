@@ -22,6 +22,11 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const randInt = (min: number, max: number) => Math.floor(rand(min, max + 1));
 
+const FONT_HUD = '15px monospace';
+const FONT_OVERLAY_TITLE = 'bold 46px monospace';
+const FONT_OVERLAY_SUB = '18px monospace';
+const FONT_POWERUP = 'bold 12px monospace';
+
 class Bullet {
   x: number;
   y: number;
@@ -155,7 +160,7 @@ class PowerUp {
     ctx.strokeRect(-r, -r, r * 2, r * 2);
     ctx.restore();
     ctx.fillStyle = colors.accent;
-    ctx.font = 'bold 12px monospace';
+    ctx.font = FONT_POWERUP;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('3x', this.x, this.y);
@@ -312,12 +317,14 @@ export class AsteroidesEngine implements GameEngine {
   private ctx: CanvasRenderingContext2D;
   private callbacks: GameCallbacks;
   private paletteRef: PaletteRef | null = null;
+  private cachedColors: Record<string, string> = PALETTES.clasico;
   private keys: Record<string, boolean> = {};
   private justPressed: Record<string, boolean> = {};
   private rafId = 0;
   private lastTime: number | null = null;
   private running = false;
   private paused = false;
+  private pauseDrawn = false;
 
   private ship!: Ship;
   private bullets: Bullet[] = [];
@@ -355,7 +362,9 @@ export class AsteroidesEngine implements GameEngine {
   // Asteroides usa el formato Record; el array pertenece al patrón Tetris.
   private getColors(): Record<string, string> {
     const cur = this.paletteRef?.current;
-    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    const colors = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    if (colors !== this.cachedColors) this.cachedColors = colors;
+    return this.cachedColors;
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -561,7 +570,7 @@ export class AsteroidesEngine implements GameEngine {
     colors: Record<string, string>,
   ) {
     ctx.fillStyle = colors.hudText;
-    ctx.font = '15px monospace';
+    ctx.font = FONT_HUD;
 
     ctx.textAlign = 'left';
     ctx.fillText(`SCORE  ${this.score}`, 14, 26);
@@ -587,9 +596,9 @@ export class AsteroidesEngine implements GameEngine {
   ) {
     ctx.textAlign = 'center';
     ctx.fillStyle = colors.text;
-    ctx.font = 'bold 46px monospace';
+    ctx.font = FONT_OVERLAY_TITLE;
     ctx.fillText(title, W / 2, H / 2 - 18);
-    ctx.font = '18px monospace';
+    ctx.font = FONT_OVERLAY_SUB;
     ctx.fillStyle = colors.textDim;
     ctx.fillText(sub, W / 2, H / 2 + 22);
   }
@@ -597,6 +606,7 @@ export class AsteroidesEngine implements GameEngine {
   private draw() {
     const ctx = this.ctx;
     const colors = this.getColors();
+    ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = colors.field;
     ctx.fillRect(0, 0, W, H);
 
@@ -619,7 +629,16 @@ export class AsteroidesEngine implements GameEngine {
         ? 0
         : Math.min((ts - this.lastTime) / 1000, MAX_DT);
     this.lastTime = ts;
-    if (!this.paused) this.update(dt);
+    if (this.paused) {
+      if (!this.pauseDrawn) {
+        this.draw();
+        this.pauseDrawn = true;
+      }
+      this.rafId = requestAnimationFrame(this.loop);
+      return;
+    }
+    this.pauseDrawn = false;
+    this.update(dt);
     this.draw();
     this.rafId = requestAnimationFrame(this.loop);
   };

@@ -31,9 +31,11 @@ export class FlappyPixelEngine implements GameEngine {
   private lastTime = 0;
   private dtAcc = 0;
   private paused = false;
+  private pauseDrawn = false;
   private paletteRef: PaletteRef | null = null;
   private cachedColors: Record<string, string> = PALETTES.clasico;
-  private lastPaletteRef: PaletteRef | null = null;
+  private readonly FONT_MAIN = 'bold 24px monospace';
+  private readonly FONT_WAITING = '16px monospace';
 
   private birdY = H / 2;
   private birdV = 0;
@@ -62,7 +64,7 @@ export class FlappyPixelEngine implements GameEngine {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D context not available');
     this.ctx = ctx;
-    this.ctx.font = 'bold 24px monospace';
+    this.ctx.font = this.FONT_MAIN;
     this.ctx.textAlign = 'center';
     this.callbacks = callbacks;
     this.paletteRef = extra?.palette ?? null;
@@ -91,9 +93,14 @@ export class FlappyPixelEngine implements GameEngine {
   private startLoop() {
     const loop = (time: number) => {
       if (this.paused) {
+        if (!this.pauseDrawn) {
+          this.render();
+          this.pauseDrawn = true;
+        }
         this.rafId = requestAnimationFrame(loop);
         return;
       }
+      this.pauseDrawn = false;
       if (!this.lastTime) this.lastTime = time;
       const delta = time - this.lastTime;
       this.lastTime = time;
@@ -109,11 +116,9 @@ export class FlappyPixelEngine implements GameEngine {
   }
 
   private getColors(): Record<string, string> {
-    if (this.paletteRef !== this.lastPaletteRef) {
-      this.lastPaletteRef = this.paletteRef;
-      const cur = this.paletteRef?.current;
-      this.cachedColors = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
-    }
+    const cur = this.paletteRef?.current;
+    const colors = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    if (colors !== this.cachedColors) this.cachedColors = colors;
     return this.cachedColors;
   }
 
@@ -236,9 +241,9 @@ export class FlappyPixelEngine implements GameEngine {
     // Waiting message
     if (this.state === 'waiting') {
       this.ctx.fillStyle = colors.text;
-      this.ctx.font = '16px monospace';
+      this.ctx.font = this.FONT_WAITING;
       this.ctx.fillText('TAP TO START', W / 2, H / 2 + 60);
-      this.ctx.font = 'bold 24px monospace';
+      this.ctx.font = this.FONT_MAIN;
     }
   }
 

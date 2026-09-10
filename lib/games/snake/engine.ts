@@ -14,6 +14,12 @@ import {
 } from './constants';
 import { drawWallBorder } from '../drawWallBorder';
 
+/* ── Module-level constants (P1) ── */
+const FONT_HUD = '16px monospace';
+const FONT_PAUSE = '36px monospace';
+const FONT_GAMEOVER = '48px monospace';
+const FONT_GAMEOVER_SUB = '18px monospace';
+
 // Coordenadas de recorte de cada fruta dentro de fruits.png
 const FRUIT_SPRITES: { x: number; y: number; w: number; h: number }[] = [
   { x: 34, y: 136, w: 110, h: 160 },
@@ -97,6 +103,10 @@ export class SnakeEngine implements GameEngine {
   private lastTime: number | null = null;
   private tickAccumulator = 0;
   private tickInterval = BASE_TICK;
+  private pauseDrawn = false; // P2: solo un frame al entrar en pausa
+
+  private cachedColors: Record<string, string> = PALETTES.clasico; // P5
+  private snakeCells = new Set<string>(); // P4: lookup O(1) para spawnFruit
 
   private keys: Record<string, boolean> = {};
 
@@ -118,11 +128,20 @@ export class SnakeEngine implements GameEngine {
     this.loadSpritesheet();
   }
 
-  // Paleta activa: se lee en cada tick → cambio de skin instantáneo sin remount.
-  // Snake usa el formato Record; el array pertenece al patrón Tetris.
+  // Paleta activa: cacheada por frame (P5).
   private getColors(): Record<string, string> {
     const cur = this.paletteRef?.current;
-    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    const next = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    this.cachedColors = next;
+    return next;
+  }
+
+  // P4: reconstruir Set de celdas ocupadas (O(1) lookup para spawnFruit)
+  private rebuildSnakeCells() {
+    this.snakeCells.clear();
+    for (const s of this.snake) {
+      this.snakeCells.add(`${s.x},${s.y}`);
+    }
   }
 
   private loadSpritesheet() {
@@ -150,6 +169,7 @@ export class SnakeEngine implements GameEngine {
     this.lastTime = null;
     this.direction = 'right';
     this.pendingDirection = null;
+    this.pauseDrawn = false;
 
     // Serpiente inicial: 3 segmentos en el centro, yendo a la derecha
     const startX = Math.floor(COLS / 2);
@@ -159,6 +179,7 @@ export class SnakeEngine implements GameEngine {
       { x: startX - 1, y: startY },
       { x: startX - 2, y: startY },
     ];
+    this.rebuildSnakeCells(); // P4
 
     this.spawnFruit();
     this.notifyHUD();
@@ -197,12 +218,13 @@ export class SnakeEngine implements GameEngine {
 
   private spawnFruit() {
     let pos: Point;
+    // P4: uso del Set para lookup O(1) en vez de Array.some()
     do {
       pos = {
         x: Math.floor(Math.random() * COLS),
         y: Math.floor(Math.random() * ROWS),
       };
-    } while (this.snake.some((s) => s.x === pos.x && s.y === pos.y));
+    } while (this.snakeCells.has(`${pos.x},${pos.y}`));
     this.fruit = pos;
     this.fruitSpriteIndex = Math.floor(Math.random() * FRUIT_SPRITES.length);
   }
@@ -240,6 +262,7 @@ export class SnakeEngine implements GameEngine {
     }
 
     this.snake.unshift(newHead);
+    this.snakeCells.add(`${newHead.x},${newHead.y}`); // P4
 
     if (willEat) {
       this.score += POINTS_PER_FRUIT;
@@ -258,7 +281,8 @@ export class SnakeEngine implements GameEngine {
 
       this.spawnFruit();
     } else {
-      this.snake.pop();
+      const tail = this.snake.pop()!;
+      this.snakeCells.delete(`${tail.x},${tail.y}`); // P4
     }
   }
 
@@ -270,7 +294,8 @@ export class SnakeEngine implements GameEngine {
 
   private draw() {
     const ctx = this.ctx;
-    const colors = this.getColors();
+    const colors = this.getColors(); // P5: retorna cachedColors
+    ctx.clearRect(0, 0, W, H); // Auditoría general: limpiar canvas antes de dibujar
     ctx.fillStyle = colors.field;
     ctx.fillRect(0, 0, W, H);
 
@@ -339,11 +364,11 @@ export class SnakeEngine implements GameEngine {
       }
     }
 
-    // HUD en canvas
+    // HUD en canvas (font cache: constante de módulo)
     ctx.fillStyle = colors.hudBg;
     ctx.fillRect(0, 0, W, 32);
     ctx.fillStyle = colors.hudText;
-    ctx.font = '16px monospace';
+    ctx.font = FONT_HUD;
     ctx.textAlign = 'left';
     ctx.fillText(`SCORE: ${this.score}`, 10, 22);
     ctx.textAlign = 'right';
@@ -354,7 +379,7 @@ export class SnakeEngine implements GameEngine {
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.pause;
-      ctx.font = '36px monospace';
+      ctx.font = FONT_PAUSE;
       ctx.textAlign = 'center';
       ctx.fillText('EN PAUSA', W / 2, H / 2);
     }
@@ -364,11 +389,11 @@ export class SnakeEngine implements GameEngine {
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.gameOver;
-      ctx.font = '48px monospace';
+      ctx.font = FONT_GAMEOVER;
       ctx.textAlign = 'center';
       ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
       ctx.fillStyle = colors.text;
-      ctx.font = '18px monospace';
+      ctx.font = FONT_GAMEOVER_SUB;
       ctx.fillText(`PUNTUACIÓN: ${this.score}`, W / 2, H / 2 + 20);
     }
   }
@@ -388,6 +413,17 @@ export class SnakeEngine implements GameEngine {
         if (this.state !== 'playing') break;
       }
     }
+
+    // P2: solo dibujar un frame al entrar en pausa, luego congelar canvas
+    if (this.paused) {
+      if (!this.pauseDrawn) {
+        this.draw();
+        this.pauseDrawn = true;
+      }
+      this.rafId = requestAnimationFrame(this.loop);
+      return;
+    }
+    this.pauseDrawn = false;
 
     this.draw();
     this.rafId = requestAnimationFrame(this.loop);

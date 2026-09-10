@@ -105,6 +105,8 @@ export class TetrisEngine implements GameEngine {
   private lastTime: number | null = null;
   private dropAccum = 0;
   private dropInterval = 1000;
+  private pauseDrawn = false;
+  private cachedColors: (string | null)[] = COLORS;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -117,6 +119,7 @@ export class TetrisEngine implements GameEngine {
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     this.nextCtx = extra?.previewCanvas?.getContext('2d') ?? null;
     this.paletteRef = extra?.palette ?? null;
+    this.cachedColors = extra?.palette?.current ?? COLORS;
     this.callbacks = callbacks;
     window.addEventListener('keydown', this.onKeyDown);
     this.initGame();
@@ -125,7 +128,9 @@ export class TetrisEngine implements GameEngine {
   }
 
   private getColors() {
-    return this.paletteRef?.current ?? COLORS;
+    const cur = this.paletteRef?.current;
+    if (cur && cur !== this.cachedColors) this.cachedColors = cur;
+    return this.cachedColors;
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -375,22 +380,31 @@ export class TetrisEngine implements GameEngine {
     const dt =
       this.lastTime === null ? 0 : Math.min(ts - this.lastTime, MAX_DT);
     this.lastTime = ts;
-    if (!this.paused) {
-      this.dropAccum += dt;
-      if (this.dropAccum >= this.dropInterval) {
-        this.dropAccum = 0;
-        if (
-          !collide(
-            this.board,
-            this.current.shape,
-            this.current.x,
-            this.current.y + 1,
-          )
-        ) {
-          this.current.y++;
-        } else {
-          this.lockPiece();
-        }
+
+    if (this.paused) {
+      if (!this.pauseDrawn) {
+        this.draw();
+        this.pauseDrawn = true;
+      }
+      this.rafId = requestAnimationFrame(this.loop);
+      return;
+    }
+    this.pauseDrawn = false;
+
+    this.dropAccum += dt;
+    if (this.dropAccum >= this.dropInterval) {
+      this.dropAccum = 0;
+      if (
+        !collide(
+          this.board,
+          this.current.shape,
+          this.current.x,
+          this.current.y + 1,
+        )
+      ) {
+        this.current.y++;
+      } else {
+        this.lockPiece();
       }
     }
     if (this.gameOver) return;
@@ -401,6 +415,8 @@ export class TetrisEngine implements GameEngine {
   reset() {
     this.initGame();
     this.paused = false;
+    this.pauseDrawn = false;
+    this.cachedColors = this.paletteRef?.current ?? COLORS;
     this.running = true;
     cancelAnimationFrame(this.rafId);
     this.rafId = requestAnimationFrame(this.loop);
@@ -414,6 +430,9 @@ export class TetrisEngine implements GameEngine {
 
   setPaused(paused: boolean) {
     this.paused = paused;
+    if (!paused) {
+      this.cachedColors = this.paletteRef?.current ?? COLORS;
+    }
   }
 
   endGame() {

@@ -133,19 +133,34 @@ const idx = indexMap.get(lane) ?? 0;
 
 **Cómo detectarlo:** Buscar accesos directos a `paletteRef.current` o `getColors()` que lean el ref en cada frame dentro de `render()` o funciones del hot path.
 
-**Corrección:** Cachear el resultado en una propiedad privada que solo se actualice cuando el skin cambie:
+**Corrección:** Cachear el resultado en una propiedad privada y **leer `paletteRef.current` en cada frame** para detectar cambios. Comparar la referencia del objeto actual contra la cacheada:
 
 ```ts
 private cachedColors: Record<string, string> = PALETTES.clasico;
 
-// método que solo se llama cuando el skin cambia (via callback o dirty flag):
+private getColors(): Record<string, string> {
+  const cur = this.paletteRef?.current;
+  const colors = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+  if (colors !== this.cachedColors) this.cachedColors = colors;
+  return this.cachedColors;
+}
+```
+
+El wrapper actualiza `paletteRef.current` vía `useEffect` + `useRef`. El engine **debe** leer `.current` cada frame para detectar el cambio — no puede esperar a que alguien llame un método externo.
+
+**Anti-patrones (NO hacer):**
+
+```ts
+// ❌ ROTO — updateColors() nunca se llama desde el wrapper, es dead code
 updateColors(colors: Record<string, string>) {
   this.cachedColors = colors;
 }
 
-// en render(), usar cachedColors en vez de paletteRef.current:
-const colors = this.cachedColors;
+// ❌ ROTO — compara identidad del ref object (useRef nunca cambia de referencia)
+if (this.paletteRef !== this.lastPaletteRef) { ... }
 ```
+
+**Patrón de referencia:** `lib/games/asteroides/engine.ts` (getColors con cache correctamente invalidada).
 
 ---
 

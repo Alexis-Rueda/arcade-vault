@@ -67,7 +67,7 @@ Specs in **`specs/`**. State flow: `Draft` → `Approved` (set by a human) → `
 
 ## Playwright MCP
 
-Playwright screenshots in `.playwright-screenshots/`.
+**Regla:** Todas las screenshots de Playwright se guardan obligatoriamente en `.playwright-screenshots/`. Nunca en la raíz del proyecto ni en otros directorios. Usar `filename` relativo a esa carpeta, ej: `.playwright-screenshots/tetris-skin-test.png`.
 
 ## Commands
 
