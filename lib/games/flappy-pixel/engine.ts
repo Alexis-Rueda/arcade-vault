@@ -31,14 +31,17 @@ export class FlappyPixelEngine implements GameEngine {
   private lastTime = 0;
   private dtAcc = 0;
   private paused = false;
+  private pauseDrawn = false;
   private paletteRef: PaletteRef | null = null;
+  private cachedColors: Record<string, string> = PALETTES.clasico;
+  private readonly FONT_MAIN = 'bold 24px monospace';
+  private readonly FONT_WAITING = '16px monospace';
 
   private birdY = H / 2;
   private birdV = 0;
   private pipes: Pipe[] = [];
   private score = 0;
   private state: GameState = 'waiting';
-  private gameOver = false;
   private lastGapY = H / 2 - PIPE_GAP / 2;
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -61,6 +64,8 @@ export class FlappyPixelEngine implements GameEngine {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D context not available');
     this.ctx = ctx;
+    this.ctx.font = this.FONT_MAIN;
+    this.ctx.textAlign = 'center';
     this.callbacks = callbacks;
     this.paletteRef = extra?.palette ?? null;
 
@@ -76,7 +81,6 @@ export class FlappyPixelEngine implements GameEngine {
     this.pipes = [];
     this.score = 0;
     this.state = 'waiting';
-    this.gameOver = false;
     this.lastGapY = H / 2 - PIPE_GAP / 2;
     this.clearCanvas();
     this.startLoop();
@@ -89,9 +93,14 @@ export class FlappyPixelEngine implements GameEngine {
   private startLoop() {
     const loop = (time: number) => {
       if (this.paused) {
+        if (!this.pauseDrawn) {
+          this.render();
+          this.pauseDrawn = true;
+        }
         this.rafId = requestAnimationFrame(loop);
         return;
       }
+      this.pauseDrawn = false;
       if (!this.lastTime) this.lastTime = time;
       const delta = time - this.lastTime;
       this.lastTime = time;
@@ -101,14 +110,16 @@ export class FlappyPixelEngine implements GameEngine {
         this.dtAcc -= MAX_DT;
       }
       this.render();
-      if (!this.gameOver) this.rafId = requestAnimationFrame(loop);
+      if (this.state !== 'gameover') this.rafId = requestAnimationFrame(loop);
     };
     this.rafId = requestAnimationFrame(loop);
   }
 
   private getColors(): Record<string, string> {
     const cur = this.paletteRef?.current;
-    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    const colors = cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    if (colors !== this.cachedColors) this.cachedColors = colors;
+    return this.cachedColors;
   }
 
   private spawnPipe() {
@@ -194,27 +205,28 @@ export class FlappyPixelEngine implements GameEngine {
     const colors = this.getColors();
 
     // Background
+    this.ctx.clearRect(0, 0, W, H);
     this.ctx.fillStyle = colors.field;
     this.ctx.fillRect(0, 0, W, H);
 
     // Pipes
     if (this.state === 'playing' || this.state === 'gameover') {
+      // Pipe bodies
       this.ctx.fillStyle = colors.accent;
       for (const pipe of this.pipes) {
-        // Top pipe
         this.ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.gapY);
-        // Bottom pipe
         this.ctx.fillRect(
           pipe.x,
           pipe.gapY + PIPE_GAP,
           PIPE_WIDTH,
           H - pipe.gapY - PIPE_GAP,
         );
-        // Pipe caps (decorative)
-        this.ctx.fillStyle = colors.accentDim;
+      }
+      // Pipe caps
+      this.ctx.fillStyle = colors.accentDim;
+      for (const pipe of this.pipes) {
         this.ctx.fillRect(pipe.x - 3, pipe.gapY - 12, PIPE_WIDTH + 6, 12);
         this.ctx.fillRect(pipe.x - 3, pipe.gapY + PIPE_GAP, PIPE_WIDTH + 6, 12);
-        this.ctx.fillStyle = colors.accent;
       }
     }
 
@@ -224,20 +236,19 @@ export class FlappyPixelEngine implements GameEngine {
 
     // Score HUD
     this.ctx.fillStyle = colors.hudText;
-    this.ctx.font = 'bold 24px monospace';
-    this.ctx.textAlign = 'center';
     this.ctx.fillText(String(this.score), W / 2, 36);
 
     // Waiting message
     if (this.state === 'waiting') {
       this.ctx.fillStyle = colors.text;
-      this.ctx.font = '16px monospace';
+      this.ctx.font = this.FONT_WAITING;
       this.ctx.fillText('TAP TO START', W / 2, H / 2 + 60);
+      this.ctx.font = this.FONT_MAIN;
     }
   }
 
   public flap() {
-    if (this.gameOver) return;
+    if (this.state === 'gameover') return;
     if (this.state === 'waiting') {
       this.state = 'playing';
       this.spawnPipe();
@@ -251,8 +262,7 @@ export class FlappyPixelEngine implements GameEngine {
   }
 
   endGame() {
-    if (this.gameOver) return;
-    this.gameOver = true;
+    if (this.state === 'gameover') return;
     this.state = 'gameover';
     this.callbacks.onGameOver?.(this.score);
     if (this.rafId) cancelAnimationFrame(this.rafId);

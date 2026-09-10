@@ -94,6 +94,15 @@ const SPRITES = {
   },
 };
 
+// Precomputed lookup: RowColor → palette key (block1..block6)
+const COLOR_TO_BLOCK_KEY: Record<RowColor, string> = {} as Record<
+  RowColor,
+  string
+>;
+for (let i = 0; i < ROW_COLORS.length; i++) {
+  COLOR_TO_BLOCK_KEY[ROW_COLORS[i]] = 'block' + (i + 1);
+}
+
 type GameScreen = 'title' | 'playing' | 'transition';
 type GameState = 'playing' | 'lifelost' | 'gameover' | 'victory';
 
@@ -123,9 +132,13 @@ export class ArkanoidEngine implements GameEngine {
   private running = false;
   private rafId = 0;
   private lastTime: number | null = null;
+  private pauseDrawn = false;
 
   private levelButtons: { x: number; y: number; w: number; h: number }[] = [];
   private selectedLevel = 0;
+  private cachedColors: Record<string, string> = PALETTES.clasico;
+  private cachedFont = '';
+  private cachedTextAlign: CanvasTextAlign = 'start';
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -152,7 +165,26 @@ export class ArkanoidEngine implements GameEngine {
   // Arkanoid usa el formato Record; el array pertenece al patrón Tetris.
   private getColors(): Record<string, string> {
     const cur = this.paletteRef?.current;
-    return cur && !Array.isArray(cur) ? cur : PALETTES.clasico;
+    if (cur && !Array.isArray(cur)) {
+      if (cur !== this.cachedColors) {
+        this.cachedColors = cur;
+      }
+    }
+    return this.cachedColors;
+  }
+
+  private setFont(font: string) {
+    if (font !== this.cachedFont) {
+      this.ctx.font = font;
+      this.cachedFont = font;
+    }
+  }
+
+  private setTextAlign(align: CanvasTextAlign) {
+    if (align !== this.cachedTextAlign) {
+      this.ctx.textAlign = align;
+      this.cachedTextAlign = align;
+    }
   }
 
   private loadSpritesheet() {
@@ -463,21 +495,21 @@ export class ArkanoidEngine implements GameEngine {
     ctx.fillStyle = colors.hud;
     ctx.fillRect(0, 0, W, 32);
     ctx.fillStyle = colors.hudText;
-    ctx.font = '16px monospace';
-    ctx.textAlign = 'left';
+    this.setFont('16px monospace');
+    this.setTextAlign('left');
     ctx.fillText(`PUNTOS: ${this.score}`, 10, 22);
-    ctx.textAlign = 'right';
+    this.setTextAlign('right');
     ctx.fillText(`VIDAS: ${'♥'.repeat(this.lives)}`, W - 10, 22);
 
     if (this.screen === 'transition') {
       ctx.fillStyle = colors.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.accent;
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('48px monospace');
+      this.setTextAlign('center');
       ctx.fillText(`¡NIVEL ${this.levelIndex + 1}!`, W / 2, H / 2 - 20);
       ctx.fillStyle = colors.text;
-      ctx.font = '18px monospace';
+      this.setFont('18px monospace');
       ctx.fillText(
         `Nivel ${this.levelIndex + 1} - ${LEVELS[this.levelIndex].name}`,
         W / 2,
@@ -490,8 +522,8 @@ export class ArkanoidEngine implements GameEngine {
       ctx.fillStyle = colors.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.text;
-      ctx.font = '36px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('36px monospace');
+      this.setTextAlign('center');
       ctx.fillText('PAUSA', W / 2, 60);
       return;
     }
@@ -500,8 +532,8 @@ export class ArkanoidEngine implements GameEngine {
       ctx.fillStyle = colors.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.text;
-      ctx.font = '24px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('24px monospace');
+      this.setTextAlign('center');
       ctx.fillText(
         `VIDAS RESTANTES: ${this.lives} — PRESIONA ESPACIO`,
         W / 2,
@@ -513,11 +545,11 @@ export class ArkanoidEngine implements GameEngine {
       ctx.fillStyle = colors.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.gameOver;
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('48px monospace');
+      this.setTextAlign('center');
       ctx.fillText('GAME OVER', W / 2, H / 2 - 20);
       ctx.fillStyle = colors.text;
-      ctx.font = '18px monospace';
+      this.setFont('18px monospace');
       ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
     }
 
@@ -525,11 +557,11 @@ export class ArkanoidEngine implements GameEngine {
       ctx.fillStyle = colors.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = colors.victory;
-      ctx.font = '48px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('48px monospace');
+      this.setTextAlign('center');
       ctx.fillText('¡GANASTE!', W / 2, H / 2 - 20);
       ctx.fillStyle = colors.text;
-      ctx.font = '18px monospace';
+      this.setFont('18px monospace');
       ctx.fillText('Haz clic para reiniciar', W / 2, H / 2 + 30);
     }
   }
@@ -598,7 +630,7 @@ export class ArkanoidEngine implements GameEngine {
         this.drawSprite('block_' + b.color, b.x, b.y, b.w, b.h);
         continue;
       }
-      const fill = colors['block' + (ROW_COLORS.indexOf(b.color) + 1)];
+      const fill = colors[COLOR_TO_BLOCK_KEY[b.color]];
       ctx.save();
       ctx.fillStyle = fill;
       ctx.shadowColor = fill;
@@ -619,7 +651,7 @@ export class ArkanoidEngine implements GameEngine {
         ctx.drawImage(this.ssImg!, f.sx, f.sy, f.sw, f.sh, e.x, e.y, e.w, e.h);
         continue;
       }
-      const fill = colors['block' + (ROW_COLORS.indexOf(e.color) + 1)];
+      const fill = colors[COLOR_TO_BLOCK_KEY[e.color]];
       ctx.save();
       ctx.globalAlpha = 1 - e.timer / 150;
       ctx.fillStyle = fill;
@@ -631,10 +663,10 @@ export class ArkanoidEngine implements GameEngine {
   private drawTitle(colors: Record<string, string>) {
     const ctx = this.ctx;
     ctx.fillStyle = colors.text;
-    ctx.font = '48px monospace';
-    ctx.textAlign = 'center';
+    this.setFont('48px monospace');
+    this.setTextAlign('center');
     ctx.fillText('ARKANOID', W / 2, 80);
-    ctx.font = '20px monospace';
+    this.setFont('20px monospace');
     ctx.fillText('Selecciona un nivel:', W / 2, 130);
     const startY = 170;
     const itemH = 44;
@@ -647,11 +679,11 @@ export class ArkanoidEngine implements GameEngine {
         i === this.selectedLevel ? colors.accentSelected : colors.accentDim;
       ctx.fillRect(300, y, 200, itemH);
       ctx.fillStyle = colors.text;
-      ctx.font = '16px monospace';
-      ctx.textAlign = 'center';
+      this.setFont('16px monospace');
+      this.setTextAlign('center');
       ctx.fillText(`Nivel ${i + 1} - ${LEVELS[i].name}`, W / 2, y + 28);
     }
-    ctx.font = '14px monospace';
+    this.setFont('14px monospace');
     ctx.fillStyle = colors.textDim;
     ctx.fillText('Haz clic en un nivel para comenzar', W / 2, 560);
   }
@@ -687,9 +719,16 @@ export class ArkanoidEngine implements GameEngine {
   private loop = (ts: number) => {
     if (!this.running) return;
     this.lastTime = ts;
-    if (!this.paused) {
-      this.update();
+    if (this.paused) {
+      if (!this.pauseDrawn) {
+        this.draw();
+        this.pauseDrawn = true;
+      }
+      this.rafId = requestAnimationFrame(this.loop);
+      return;
     }
+    this.pauseDrawn = false;
+    this.update();
     this.draw();
     this.rafId = requestAnimationFrame(this.loop);
   };
