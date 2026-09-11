@@ -11,7 +11,7 @@ import { useUser } from '@/lib/hooks/useUser';
 import type { ScoreRow } from '@/app/data/types';
 
 export function HallOfFameScreen() {
-  const { user } = useUser();
+  const { user, username } = useUser();
   const router = useRouter();
   const [tab, setTab] = useState(GAMES[0].id);
 
@@ -43,7 +43,7 @@ export function HallOfFameScreen() {
       return;
     }
     let cancelled = false;
-    fetchPlayerBest(tab, user.name)
+    fetchPlayerBest(tab, username!)
       .then((best) => {
         if (!cancelled) setYouBest(best);
       })
@@ -62,7 +62,7 @@ export function HallOfFameScreen() {
   const game = GAMES.find((g) => g.id === tab);
 
   const youRank = isReal
-    ? (realRows?.findIndex((r) => r.name === user?.name) ?? -1) + 1 ||
+    ? (realRows?.findIndex((r) => r.name === username) ?? -1) + 1 ||
       (realRows?.length ?? 0) + 1
     : Math.floor(8 + (tab.length % 4));
   const youScore = isReal
@@ -132,7 +132,7 @@ export function HallOfFameScreen() {
                 #{String(youRank).padStart(2, '0')}
               </div>
               <div className="pl" style={{ color: 'var(--yellow)' }}>
-                {user.name}
+                {username}
               </div>
               <div
                 className="sc"

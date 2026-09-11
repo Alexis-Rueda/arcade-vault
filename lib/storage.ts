@@ -1,8 +1,6 @@
-// TODO(SPEC-04): migrar a Supabase — ver spec de integración
-import type { User, ScoreEntry } from '@/app/data/types';
+import type { ScoreEntry } from '@/app/data/types';
 
 const KEYS = {
-  user: 'av_user',
   scores: 'av_scores',
 } as const;
 
@@ -15,23 +13,6 @@ export function subscribe(fn: () => void): () => void {
 
 function notify(): void {
   listeners.forEach((fn) => fn());
-}
-
-export function readUser(): User | null {
-  try {
-    return JSON.parse(localStorage.getItem(KEYS.user) || 'null');
-  } catch {
-    return null;
-  }
-}
-
-export function writeUser(u: User | null): void {
-  if (u === null) {
-    localStorage.removeItem(KEYS.user);
-  } else {
-    localStorage.setItem(KEYS.user, JSON.stringify(u));
-  }
-  notify();
 }
 
 export function readScores(): ScoreEntry[] {
