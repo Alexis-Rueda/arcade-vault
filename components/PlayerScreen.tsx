@@ -15,7 +15,7 @@ import type { Game } from '@/app/data/types';
 import type { GameHandle } from '@/lib/games/types';
 
 export function PlayerScreen({ game }: { game: Game }) {
-  const { user } = useUser();
+  const { user, username } = useUser();
   const { addScore } = useScores();
   const router = useRouter();
 
@@ -23,7 +23,7 @@ export function PlayerScreen({ game }: { game: Game }) {
   const [lives, setLives] = useState(3);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [name, setName] = useState(user ? user.name : 'INVITADO');
+  const [name, setName] = useState(username ?? '');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -31,6 +31,10 @@ export function PlayerScreen({ game }: { game: Game }) {
   const gameRef = useRef<GameHandle | null>(null);
   const skinConfig = game.skins ? SKINS_BY_GAME[game.id] : null;
   const { skin, setSkin } = useSkinWith(skinConfig ?? GLOBAL_SKIN_CONFIG);
+
+  useEffect(() => {
+    if (username) setName(username);
+  }, [username]);
 
   const realGame = useMemo(() => getRealGame(game.id), [game.id]);
 
@@ -81,7 +85,12 @@ export function PlayerScreen({ game }: { game: Game }) {
       setSaving(true);
       setSaveError(false);
       try {
-        await insertScore({ gameId: game.id, playerName: name, score });
+        await insertScore({
+          gameId: game.id,
+          playerName: name,
+          score,
+          userId: user?.id ?? null,
+        });
         setSaved(true);
       } catch {
         setSaveError(true);

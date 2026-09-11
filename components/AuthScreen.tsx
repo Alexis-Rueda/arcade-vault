@@ -1,27 +1,117 @@
-"use client";
+'use client';
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/hooks/useUser";
+import { useState, useEffect, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client-browser';
+
+type Tab = 'in' | 'up';
+
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return 'Mínimo 8 caracteres';
+  if (!/[A-Z]/.test(pw)) return 'Al menos 1 mayúscula';
+  if (!/[0-9]/.test(pw)) return 'Al menos 1 número';
+  return null;
+}
 
 export function AuthScreen() {
-  const [tab, setTab] = useState<"in" | "up">("in");
-  const [userName, setUserName] = useState("");
-  const [pass, setPass] = useState("");
-  const [email, setEmail] = useState("");
-  const { setUser } = useUser();
+  const [tab, setTab] = useState<Tab>('in');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
-  const submit = (e: FormEvent) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/');
+    });
+  }, [supabase, router]);
+
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    const name = (userName || "PLAYER1").toUpperCase().slice(0, 10);
-    setUser({ name, loggedAt: Date.now() });
-    router.push("/games");
+    setError(null);
+    setInfo(null);
+    setLoading(true);
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    router.push('/');
   };
 
-  const guest = () => {
-    setUser(null);
-    router.push("/games");
+  const handleRegister = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+
+    const pwError = validatePassword(password);
+    if (pwError) {
+      setError(pwError);
+      return;
+    }
+
+    setLoading(true);
+
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username: username.trim().toUpperCase().slice(0, 10) },
+      },
+    });
+
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    setInfo('Revisa tu correo para confirmar tu cuenta');
+  };
+
+  const handleForgotPassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const { error: authError } = await supabase.auth.resetPasswordForEmail(
+      resetEmail,
+      { redirectTo: `${window.location.origin}/auth/reset-password` },
+    );
+
+    setLoading(false);
+
+    if (authError) {
+      setError(authError.message);
+      return;
+    }
+
+    setResetSent(true);
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
 
   return (
@@ -30,50 +120,235 @@ export function AuthScreen() {
         <div className="auth-header">
           <div className="mark" />
           <h2 className="neon-cyan">ARCADE VAULT</h2>
-          <div className="mono" style={{ fontSize: 11, color: "var(--ink-faint)", letterSpacing: "0.16em", marginTop: 6 }}>
+          <div
+            className="mono"
+            style={{
+              fontSize: 11,
+              color: 'var(--ink-faint)',
+              letterSpacing: '0.16em',
+              marginTop: 6,
+            }}
+          >
             ACCESO AL SISTEMA · v2.6
           </div>
         </div>
 
-        <div className="auth-tabs">
-          <button className={tab === "in" ? "on" : ""} onClick={() => setTab("in")}>INICIAR SESIÓN</button>
-          <button className={tab === "up" ? "on" : ""} onClick={() => setTab("up")}>CREAR CUENTA</button>
-        </div>
-
-        <form onSubmit={submit}>
-          <div className="field">
-            <label>Usuario</label>
-            <input value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="px_kai" />
-          </div>
-          {tab === "up" && (
-            <div className="field slide-in">
-              <label>Correo electrónico</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jugador@vault.gg" />
+        {!showReset ? (
+          <>
+            <div className="auth-tabs">
+              <button
+                className={tab === 'in' ? 'on' : ''}
+                onClick={() => {
+                  setTab('in');
+                  setError(null);
+                  setInfo(null);
+                }}
+              >
+                INICIAR SESIÓN
+              </button>
+              <button
+                className={tab === 'up' ? 'on' : ''}
+                onClick={() => {
+                  setTab('up');
+                  setError(null);
+                  setInfo(null);
+                }}
+              >
+                CREAR CUENTA
+              </button>
             </div>
-          )}
-          <div className="field">
-            <label>Contraseña</label>
-            <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="••••••••" />
-          </div>
 
-          <button className="btn lg" type="submit" style={{ width: "100%", marginTop: 8 }}>
-            {tab === "in" ? "ENTRAR AL VAULT" : "CREAR Y JUGAR"}
-          </button>
-        </form>
+            {error && (
+              <div
+                className="auth-error"
+                style={{
+                  color: '#ff6b6b',
+                  fontSize: 11,
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </div>
+            )}
 
-        <button className="btn ghost" style={{ width: "100%", marginTop: 10 }} onClick={guest}>
-          JUGAR COMO INVITADO
-        </button>
+            {info && (
+              <div
+                className="auth-info"
+                style={{
+                  color: '#6bff9f',
+                  fontSize: 11,
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}
+              >
+                {info}
+              </div>
+            )}
 
-        <div className="auth-divider">O CONTINÚA CON</div>
-        <div className="social">
-          <button className="btn ghost" type="button">◆  GOOGLE</button>
-          <button className="btn ghost" type="button">▣  GITHUB</button>
-        </div>
+            <form onSubmit={tab === 'in' ? handleLogin : handleRegister}>
+              {tab === 'up' && (
+                <div className="field slide-in">
+                  <label>Nombre de usuario</label>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="PX_KAI"
+                    maxLength={10}
+                  />
+                </div>
+              )}
+              <div className="field">
+                <label>Correo electrónico</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jugador@vault.gg"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label>Contraseña</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
 
-        <div style={{ marginTop: 18, textAlign: "center", fontSize: 11, color: "var(--ink-faint)", letterSpacing: "0.1em" }}>
-          AL ENTRAR ACEPTAS LOS TÉRMINOS DEL SALÓN ARCADE
-        </div>
+              <button
+                className="btn lg"
+                type="submit"
+                style={{ width: '100%', marginTop: 8 }}
+                disabled={loading}
+              >
+                {loading
+                  ? 'ESPERA...'
+                  : tab === 'in'
+                    ? 'ENTRAR AL VAULT'
+                    : 'CREAR Y JUGAR'}
+              </button>
+            </form>
+
+            {tab === 'in' && (
+              <button
+                className="btn ghost"
+                style={{ width: '100%', marginTop: 8, fontSize: 10 }}
+                onClick={() => {
+                  setShowReset(true);
+                  setError(null);
+                  setResetSent(false);
+                  setResetEmail(email);
+                }}
+              >
+                ¿OLVIDASTE TU CONTRASEÑA?
+              </button>
+            )}
+
+            <div className="auth-divider">O CONTINÚA CON</div>
+            <div className="social">
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => handleOAuth('google')}
+              >
+                ◆ GOOGLE
+              </button>
+              <button
+                className="btn ghost"
+                type="button"
+                onClick={() => handleOAuth('github')}
+              >
+                ▣ GITHUB
+              </button>
+            </div>
+
+            <div
+              style={{
+                marginTop: 18,
+                textAlign: 'center',
+                fontSize: 11,
+                color: 'var(--ink-faint)',
+                letterSpacing: '0.1em',
+              }}
+            >
+              AL ENTRAR ACEPTAS LOS TÉRMINOS DEL SALÓN ARCADE
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="auth-tabs">
+              <button className="on">RECUPERAR CONTRASEÑA</button>
+            </div>
+
+            {resetSent ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div
+                  style={{ color: '#6bff9f', fontSize: 12, marginBottom: 12 }}
+                >
+                  Te hemos enviado un enlace de recuperación
+                </div>
+                <button
+                  className="btn ghost"
+                  onClick={() => {
+                    setShowReset(false);
+                    setResetSent(false);
+                  }}
+                >
+                  VOLVER AL LOGIN
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword}>
+                {error && (
+                  <div
+                    className="auth-error"
+                    style={{
+                      color: '#ff6b6b',
+                      fontSize: 11,
+                      marginBottom: 8,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+                <div className="field">
+                  <label>Correo electrónico</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="jugador@vault.gg"
+                    required
+                  />
+                </div>
+                <button
+                  className="btn lg"
+                  type="submit"
+                  style={{ width: '100%', marginTop: 8 }}
+                  disabled={loading}
+                >
+                  {loading ? 'ENVIANDO...' : 'ENVIAR ENLACE'}
+                </button>
+                <button
+                  className="btn ghost"
+                  style={{ width: '100%', marginTop: 8, fontSize: 10 }}
+                  type="button"
+                  onClick={() => {
+                    setShowReset(false);
+                    setError(null);
+                  }}
+                >
+                  VOLVER
+                </button>
+              </form>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

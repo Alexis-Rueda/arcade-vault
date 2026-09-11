@@ -14,11 +14,6 @@ export type Game = {
   plays: string;
 };
 
-export type User = {
-  name: string;
-  loggedAt: number;
-};
-
 export type ScoreEntry = {
   game: string;
   name: string;

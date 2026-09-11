@@ -23,17 +23,17 @@ Available in `.agents/skills/`:
 
 Project-scoped opencode agents in `.opencode/agents/` (invoke with `@<name>`):
 
-- **`@game-jam`** — given a theme/concept, derives a `game-id` and writes **≥2 distinct design variants** of the same game as specs in `specs/game-jam/<game-id>/` (local numbering `01-`, `02-`). States specs `Draft`; writes only `.md`, never code. Lives at `.opencode/agents/game-jam.md`.
-- **`@game-planner`** — plans and decides which arcade game to build next in Arcade Vault. Inventories the catalog and available references, proposes ranked candidates by criteria (genre gap, portability, canvas-fit, leaderboard engagement, visual novelty) and keeps a persistent memory of suggestions in `references/game-suggestions-todo.md` to avoid repeats. Only recommends and records — never implements or writes specs. Lives at `.opencode/agents/game-planner.md`.
-- **`@skin-designer`** — audits and implements skins (neon, retro, clásico) on a **single game per invocation** (`@skin-designer <game-id>`). Maintains a persistent memory in `references/game-with-themes.md` tracking which games already have skins. Tetris is excluded (has its own skin system). Creates shared infra on first invocation (`lib/games/skins.ts`, `lib/hooks/useSkin.ts`, `components/games/SkinSwitcher.tsx`). Only touches the specified game's engine + wrapper. Lives at `.opencode/agents/skin-designer.md`.
-- **`@mobile-porter`** — adapta cualquier juego arcade para que funcione y se vea bien en dispositivos móviles, siguiendo los estándares de SPEC 10. Genera ajustes de UI responsiva, redimensionamiento del canvas y adapta los controles táctiles. Vive en `.opencode/agents/mobile-porter.md`.
-- **`@game-performance-booster`** — audita y optimiza el performance de un juego arcade por invocación (`@game-performance-booster <game-id>`). Aplica 5 patrones de optimización de engine canvas (constantes de módulo, render en pausa, timers acotados, lookups O(1), cache de colores) más auditoría general (clearRect, font cache, batch fillStyle). Solo toca `lib/games/<id>/engine.ts` y `lib/games/<id>/constants.ts`. Vive en `.opencode/agents/game-performance-booster.md`.
+- **`@game-jam`** — genera ≥2 variantes de diseño de un juego arcade como specs en `specs/game-jam/`. Definición: `.opencode/agents/game-jam.md`.
+- **`@game-planner`** — planifica qué juego construir siguiente, rankeando candidatos por hueco de género, portabilidad y engagement. Definición: `.opencode/agents/game-planner.md`.
+- **`@skin-designer`** — aplica skins (neon, retro, clásico) a un juego por invocación. Crea infra compartida al primer uso. Definición: `.opencode/agents/skin-designer.md`.
+- **`@mobile-porter`** — adapta juegos para móvil: UI responsiva, canvas responsive y controles táctiles. Definición: `.opencode/agents/mobile-porter.md`.
+- **`@game-performance-booster`** — optimiza performance de engines canvas: constantes, render en pausa, timers, lookups O(1), cache. Definición: `.opencode/agents/game-performance-booster.md`.
 
 ## Implemented Games
 
 Full table in `references/implemented-games.md`.
 
-Implemented: `asteroides`, `tetris`, `arkanoid`, `snake` and more (real engines in `lib/games/<id>/`, catalog in `app/data/games.ts` with `real: true`).
+Implemented: `asteroides`, `tetris`, `arkanoid`, `snake`, `flappy-pixel` (real engines in `lib/games/<id>/`, catalog in `app/data/games.ts` with `real: true`).
 
 ## Architecture
 
@@ -46,8 +46,8 @@ Implemented: `asteroides`, `tetris`, `arkanoid`, `snake` and more (real engines 
 - `components/` — UI. Subfolders `games/` (canvas wrappers), `home/`, `about/`.
 - `lib/`
   - `supabase/` — `client-browser.ts`, `client-server.ts`, `middleware.ts`, `scores.ts` (`fetchLeaderboard`, `fetchPlayerBest`, `insertScore`).
-  - `games/` — `types.ts` (engine contract), `registry.ts` (`REAL_GAMES`, `isRealGame`, `getRealGame`), `drawWallBorder.ts`, and one directory per game (`<id>/{constants,engine,index}.ts` with `create<Game>Game(canvas, callbacks)`).
-  - `hooks/` — `useReveal`, `useScores`, `useUser`.
+  - `games/` — `types.ts` (engine contract), `registry.ts` (`REAL_GAMES`, `isRealGame`, `getRealGame`), `skins.ts`, `drawWallBorder.ts`, and one directory per game (`<id>/{constants,engine,index}.ts` with `create<Game>Game(canvas, callbacks)`).
+  - `hooks/` — `useReveal`, `useScores`, `useSkin`, `useUser`.
   - `email/resend.ts`, `storage.ts`.
 - `proxy.ts` (root) — Next 16 proxy that keeps the Supabase session on every request (replaces the old `middleware.ts`).
 - `@/*` path alias maps to the project root (`.`).
