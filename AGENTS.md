@@ -28,6 +28,7 @@ Project-scoped opencode agents in `.opencode/agents/` (invoke with `@<name>`):
 - **`@skin-designer`** — aplica skins (neon, retro, clásico) a un juego por invocación. Crea infra compartida al primer uso. Definición: `.opencode/agents/skin-designer.md`.
 - **`@mobile-porter`** — adapta juegos para móvil: UI responsiva, canvas responsive y controles táctiles. Definición: `.opencode/agents/mobile-porter.md`.
 - **`@game-performance-booster`** — optimiza performance de engines canvas: constantes, render en pausa, timers, lookups O(1), cache. Definición: `.opencode/agents/game-performance-booster.md`.
+- **`@security-auditor`** — audita seguridad de DB (Supabase) y aplicación (Next.js). Solo lectura, reporta hallazgos. Bitácora en `references/security/audit-log.md`. Definición: `.opencode/agents/security-auditor.md`.
 
 ## Implemented Games
 
