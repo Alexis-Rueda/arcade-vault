@@ -6,12 +6,13 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/';
+  const safeNext = next.startsWith('/') && !next.includes('//') ? next : '/';
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const redirectUrl = `${origin}${next}`;
+      const redirectUrl = `${origin}${safeNext}`;
       const response = NextResponse.redirect(redirectUrl);
 
       // Copiar cookies de la cookieStore a la redirect response
