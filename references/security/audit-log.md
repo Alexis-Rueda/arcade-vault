@@ -12,7 +12,7 @@ Bitacora de auditorias de seguridad. Una entrada por corrida, orden cronologico 
 
 ### Criticos
 
-- `next@16.2.10` — 11 CVEs incluyendo RCE en windows, SSRF en Server Actions, middleware bypass. Actualizar a 16.3.5+.
+- ~~`next@16.2.10` — 11 CVEs incluyendo RCE en windows, SSRF en Server Actions, middleware bypass.~~ **Resuelto** (2026-09-14): upgrade a `next@16.3.5` + `eslint-config-next@16.3.5`. Build y lint pasan.
 
 ### Altos
 
@@ -39,6 +39,6 @@ Bitacora de auditorias de seguridad. Una entrada por corrida, orden cronologico 
 ### Delta vs anterior
 
 - Nuevos: todos (primera auditoria)
-- Resueltos: ninguno
+- Resueltos: `next@16.2.10` critical CVEs (upgrade a 16.3.5)
 
 ---
