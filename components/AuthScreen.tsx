@@ -6,12 +6,8 @@ import { createClient } from '@/lib/supabase/client-browser';
 
 type Tab = 'in' | 'up';
 
-function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return 'Mínimo 8 caracteres';
-  if (!/[A-Z]/.test(pw)) return 'Al menos 1 mayúscula';
-  if (!/[0-9]/.test(pw)) return 'Al menos 1 número';
-  return null;
-}
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
 export function AuthScreen() {
   const [tab, setTab] = useState<Tab>('in');
@@ -20,6 +16,7 @@ export function AuthScreen() {
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -58,10 +55,12 @@ export function AuthScreen() {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    setPasswordError(null);
 
-    const pwError = validatePassword(password);
-    if (pwError) {
-      setError(pwError);
+    if (!PASSWORD_REGEX.test(password)) {
+      setPasswordError(
+        'Mínimo 8 caracteres, 1 minúscula, 1 mayúscula, 1 número y 1 símbolo',
+      );
       return;
     }
 
@@ -213,10 +212,24 @@ export function AuthScreen() {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError(null);
+                  }}
                   placeholder="••••••••"
                   required
                 />
+                {passwordError && (
+                  <div
+                    style={{
+                      color: '#ff6b6b',
+                      fontSize: 10,
+                      marginTop: 4,
+                    }}
+                  >
+                    {passwordError}
+                  </div>
+                )}
               </div>
 
               <button
